@@ -254,16 +254,18 @@ export const SavingsPage: React.FC = () => {
       )}
 
       {/* ── FAB: Tambah target baru ─────────────────────── */}
-      <div className="flex justify-center pt-2">
-        <Button
-          size="md"
-          leftIcon={<Plus size={16} />}
-          onClick={() => { setEditGoal(undefined); setIsFormOpen(true); }}
-          className="shadow-fab"
-        >
-          Tambah Target Baru
-        </Button>
-      </div>
+      {goals && goals.length > 0 && (
+        <div className="flex justify-center pt-2">
+          <Button
+            size="md"
+            leftIcon={<Plus size={16} />}
+            onClick={() => { setEditGoal(undefined); setIsFormOpen(true); }}
+            className="shadow-fab"
+          >
+            Tambah Target Baru
+          </Button>
+        </div>
+      )}
 
       {/* ── Modals ──────────────────────────────────────── */}
       <SavingGoalFormModal
