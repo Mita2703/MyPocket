@@ -153,8 +153,8 @@ export const SettingsPage: React.FC = () => {
             fullWidth
             onClick={handleExportCSV}
             isLoading={isExporting}
-            leftIcon={exportSuccess ? <CheckCircle2 size={16} className="text-emerald-500" /> : <Download size={16} className="text-rose-500" />}
-            className={cn('justify-start text-xs text-slate-700', exportSuccess && 'border-emerald-300 bg-emerald-50')}
+            leftIcon={exportSuccess ? <CheckCircle2 size={16} className="text-rose-500" /> : <Download size={16} className="text-rose-500" />}
+            className={cn('justify-start text-xs text-slate-700', exportSuccess && 'border-rose-300 bg-rose-50')}
           >
             {exportSuccess ? 'CSV Berhasil Diunduh!' : 'Export Backup Data (CSV)'}
           </Button>
@@ -213,7 +213,7 @@ export const SettingsPage: React.FC = () => {
                 className={cn(
                   'py-2 rounded-lg text-xs font-bold transition-all duration-150 text-center tap-feedback',
                   catType === 'income'
-                    ? 'bg-white text-emerald-700 shadow-card'
+                    ? 'bg-white text-slate-800 shadow-card'
                     : 'text-slate-500 hover:text-slate-700'
                 )}
               >

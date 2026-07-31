@@ -137,8 +137,8 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
           {/* Income / Expense mini stats */}
           <div className="grid grid-cols-2 gap-3 mt-4 pt-4 border-t border-rose-400/30">
             <div className="flex items-center gap-2.5">
-              <div className="w-8 h-8 rounded-lg bg-emerald-400/20 flex items-center justify-center">
-                <TrendingUp size={15} className="text-emerald-300" />
+              <div className="w-8 h-8 rounded-lg bg-white/20 flex items-center justify-center">
+                <TrendingUp size={15} className="text-rose-100" />
               </div>
               <div>
                 <p className="text-[10px] text-rose-200 font-medium">Pemasukan</p>
@@ -255,7 +255,7 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
           /* Bar chart — 7-day spending */
           <div className="h-48 w-full pt-1">
             <ResponsiveContainer width="100%" height="100%">
-              <BarChart data={dailyBarData} margin={{ top: 6, right: 6, left: -26, bottom: 0 }}>
+              <BarChart data={dailyBarData} margin={{ top: 6, right: 6, left: -26, bottom: 0 }} style={{ outline: 'none' }}>
                 <XAxis dataKey="displayDate" tick={{ fontSize: 10, fill: '#94A3B8' }} axisLine={false} tickLine={false} />
                 <YAxis tick={{ fontSize: 10, fill: '#94A3B8' }} axisLine={false} tickLine={false} />
                 <Tooltip
@@ -263,7 +263,7 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
                   contentStyle={{ borderRadius: 12, border: 'none', boxShadow: '0 4px 12px rgba(0,0,0,0.1)', fontSize: 11 }}
                   cursor={{ fill: 'rgba(201,96,104,0.06)' }}
                 />
-                <Bar dataKey="amount" fill="#C96068" radius={[6, 6, 0, 0]} maxBarSize={32} />
+                <Bar dataKey="amount" fill="#C96068" radius={[6, 6, 0, 0]} maxBarSize={32} stroke="none" style={{ outline: 'none' }} />
               </BarChart>
             </ResponsiveContainer>
           </div>
@@ -325,7 +325,7 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
                   {/* Amount */}
                   <span className={cn(
                     'text-xs font-extrabold shrink-0 tabular-nums',
-                    isIncome ? 'text-emerald-600' : 'text-slate-800',
+                    isIncome ? 'text-slate-800' : 'text-rose-600',
                   )}>
                     {isIncome ? '+' : '-'}{formatRupiah(tx.amount)}
                   </span>

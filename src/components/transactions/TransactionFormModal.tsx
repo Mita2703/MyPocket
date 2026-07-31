@@ -118,8 +118,8 @@ export const TransactionFormModal: React.FC<TransactionFormModalProps> = ({
             id="type-income"
             active={!isExpense}
             label="Pemasukan"
-            icon={<PlusCircle size={16} className={!isExpense ? 'text-emerald-500' : 'text-slate-400'} />}
-            activeClass="text-emerald-700"
+            icon={<PlusCircle size={16} className={!isExpense ? 'text-rose-500' : 'text-slate-400'} />}
+            activeClass="text-rose-700"
             onClick={() => handleTypeSwitch('income')}
           />
         </div>
@@ -178,11 +178,11 @@ export const TransactionFormModal: React.FC<TransactionFormModalProps> = ({
                     onClick={() => setCategoryId(cat.id)}
                     aria-pressed={selected}
                     className={cn(
-                      'flex flex-col items-center justify-center gap-1 p-2 rounded-2xl border',
-                      'transition-all duration-150 tap-feedback',
+                      'flex flex-col items-center justify-center gap-1 p-2 rounded-2xl border-2',
+                      'transition-all duration-150 tap-feedback focus:outline-none',
                       selected
-                        ? 'border-rose-400 bg-rose-50 shadow-sm scale-[1.04]'
-                        : 'border-slate-100 bg-white hover:border-slate-200',
+                        ? 'border-rose-400 bg-rose-50 shadow-sm'
+                        : 'border-transparent bg-white hover:bg-slate-50 hover:border-slate-200',
                     )}
                   >
                     {/* Icon badge */}
@@ -270,8 +270,7 @@ export const TransactionFormModal: React.FC<TransactionFormModalProps> = ({
           disabled={!categoryId || !displayAmount || isSubmitting}
           className={cn(
             'mt-1',
-            !isExpense && 'bg-emerald-500 hover:bg-emerald-600 shadow-emerald-200/60',
-            saveSuccess && 'bg-emerald-500',
+            saveSuccess && 'bg-rose-600',
           )}
         >
           {saveSuccess ? (

@@ -264,7 +264,7 @@ export const BudgetPage: React.FC = () => {
             fullWidth
             size="lg"
             isLoading={isSaving}
-            className={cn(saveOk && 'bg-emerald-500')}
+            className={cn(saveOk && 'bg-rose-500')}
           >
             {saveOk ? (
               <span className="flex items-center gap-2">

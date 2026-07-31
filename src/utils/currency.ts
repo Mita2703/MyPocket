@@ -55,10 +55,10 @@ export function parseRawAmount(input: string): number {
  * Sesuai spesifikasi PRD: Hijau → Kuning → Merah
  */
 export function getProgressColor(pct: number): string {
-  if (pct >= 100) return '#C96068'; // rose-500 — melebihi budget
-  if (pct >= 80) return '#F59E0B';  // amber-500 — hampir habis
-  if (pct >= 60) return '#FBBF24';  // amber-400 — perlu perhatian
-  return '#10B981';                  // emerald-500 — aman
+  if (pct >= 100) return '#BE123C'; // rose-700
+  if (pct >= 85)  return '#F43F5E'; // rose-500
+  if (pct >= 60)  return '#FB7185'; // rose-400
+  return '#FDA4AF';                  // rose-300
 }
 
 /**

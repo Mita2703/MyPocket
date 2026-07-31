@@ -136,7 +136,7 @@ export const TransactionsPage: React.FC = () => {
               'flex-1 py-1.5 rounded-lg text-xs font-semibold transition-all duration-150 tap-feedback',
               filterType === t
                 ? t === 'income'
-                  ? 'bg-white text-emerald-700 shadow-card'
+                  ? 'bg-white text-slate-800 shadow-card'
                   : t === 'expense'
                   ? 'bg-white text-rose-700 shadow-card'
                   : 'bg-white text-slate-800 shadow-card'
@@ -169,9 +169,9 @@ export const TransactionsPage: React.FC = () => {
       {/* ── Summary Bar ──────────────────────────────────── */}
       {filteredTransactions.length > 0 && (
         <div className="flex gap-2 text-xs">
-          <div className="flex-1 bg-emerald-50 rounded-xl px-3 py-2.5 text-center border border-emerald-100">
-            <p className="text-emerald-600 font-medium text-[10px]">Total Masuk</p>
-            <p className="font-bold text-emerald-700 mt-0.5">{formatRupiah(monthTotals.income)}</p>
+          <div className="flex-1 bg-slate-50 rounded-xl px-3 py-2.5 text-center border border-slate-200">
+            <p className="text-slate-500 font-medium text-[10px]">Total Masuk</p>
+            <p className="font-bold text-slate-800 mt-0.5">{formatRupiah(monthTotals.income)}</p>
           </div>
           <div className="flex-1 bg-rose-50 rounded-xl px-3 py-2.5 text-center border border-rose-100">
             <p className="text-rose-600 font-medium text-[10px]">Total Keluar</p>
@@ -225,7 +225,7 @@ export const TransactionsPage: React.FC = () => {
                   <h3 className="text-xs font-bold text-slate-500">{formatDateReadable(date)}</h3>
                   <span className={cn(
                     'text-[11px] font-bold tabular-nums',
-                    dayBalance >= 0 ? 'text-emerald-600' : 'text-rose-600',
+                    dayBalance >= 0 ? 'text-slate-800' : 'text-rose-600',
                   )}>
                     {dayBalance >= 0 ? '+' : ''}{formatRupiah(dayBalance)}
                   </span>
@@ -263,7 +263,7 @@ export const TransactionsPage: React.FC = () => {
                         <div className="flex items-center gap-2 shrink-0">
                           <span className={cn(
                             'text-xs font-extrabold tabular-nums',
-                            isIncome ? 'text-emerald-600' : 'text-slate-800',
+                            isIncome ? 'text-slate-800' : 'text-rose-600',
                           )}>
                             {isIncome ? '+' : '-'}{formatRupiah(tx.amount)}
                           </span>

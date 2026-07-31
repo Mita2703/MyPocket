@@ -18,20 +18,20 @@ interface ProgressBarProps {
   colorOverride?: string;
 }
 
-/** Derive fill color from percentage (PRD § F4 spec): Green → Yellow → Red */
+/** Derive fill color from percentage: rose shades from light (safe) to deep (danger) */
 function getBarColor(pct: number): string {
-  if (pct >= 100) return 'bg-rose-500';   // Over budget — solid rose
-  if (pct >= 80)  return 'bg-amber-500';  // Warning — amber
-  if (pct >= 60)  return 'bg-yellow-400'; // Caution  — yellow
-  return 'bg-emerald-500';                // Safe     — green
+  if (pct >= 100) return 'bg-rose-700 animate-pulse-soft'; // Over budget
+  if (pct >= 85)  return 'bg-rose-500';                    // Near limit
+  if (pct >= 60)  return 'bg-rose-400';                    // Mid range
+  return 'bg-rose-300';                                    // Safe
 }
 
 /** Derive text color matching bar color */
 function getTextColor(pct: number): string {
-  if (pct >= 100) return 'text-rose-600';
-  if (pct >= 80)  return 'text-amber-600';
-  if (pct >= 60)  return 'text-yellow-600';
-  return 'text-emerald-600';
+  if (pct >= 100) return 'text-rose-800 font-bold';
+  if (pct >= 85)  return 'text-rose-700';
+  if (pct >= 60)  return 'text-rose-600';
+  return 'text-slate-500';
 }
 
 export const ProgressBar: React.FC<ProgressBarProps> = ({

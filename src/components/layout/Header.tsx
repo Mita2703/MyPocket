@@ -61,13 +61,13 @@ export const Header: React.FC<HeaderProps> = ({ title = 'MyPocket' }) => {
           className={cn(
             'flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-semibold',
             isOnline
-              ? 'bg-emerald-50 text-emerald-700'
+              ? 'bg-rose-50 text-rose-700'
               : 'bg-slate-100 text-slate-500',
           )}
           title={isOnline ? 'Tersambung' : 'Mode Offline — data tetap aman di perangkat'}
         >
           {isOnline
-            ? <Wifi size={12} className="text-emerald-500" />
+            ? <Wifi size={12} className="text-rose-500" />
             : <WifiOff size={12} className="text-rose-500" />
           }
           <span>{isOnline ? 'Online' : 'Offline'}</span>
