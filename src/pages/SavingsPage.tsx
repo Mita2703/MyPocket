@@ -7,6 +7,7 @@ import { SavingGoal, SavingEntry } from '../types';
 import { formatRupiah } from '../utils/currency';
 import { Card } from '../components/common/Card';
 import { Button } from '../components/common/Button';
+import { ConfirmModal } from '../components/common/ConfirmModal';
 import { SavingGoalFormModal } from '../components/savings/SavingGoalFormModal';
 import { TopUpModal } from '../components/savings/TopUpModal';
 import { SavingHistoryModal } from '../components/savings/SavingHistoryModal';
@@ -30,8 +31,10 @@ export const SavingsPage: React.FC = () => {
   const [isFormOpen, setIsFormOpen]   = useState(false);
   const [editGoal, setEditGoal]       = useState<SavingGoal | undefined>(undefined);
 
-  const [topUpGoal, setTopUpGoal]     = useState<SavingGoal | null>(null);
-  const [historyGoal, setHistoryGoal] = useState<SavingGoal | null>(null);
+  const [topUpGoal, setTopUpGoal]         = useState<SavingGoal | null>(null);
+  const [historyGoal, setHistoryGoal]     = useState<SavingGoal | null>(null);
+  const [deleteConfirmGoal, setDeleteConfirmGoal] = useState<SavingGoal | null>(null);
+  const [isDeleting, setIsDeleting]       = useState(false);
 
   /* ── DB queries ── */
   const goals   = useLiveQuery<SavingGoal[]>(() => db.savingGoals.toArray(), []);
@@ -85,11 +88,16 @@ export const SavingsPage: React.FC = () => {
     await db.savingGoals.update(editGoal.id, data);
   };
 
-  const handleDeleteGoal = async (goal: SavingGoal) => {
-    if (!goal.id) return;
-    if (!window.confirm(`Hapus target "${goal.name}"? Semua riwayat tabungan juga akan dihapus.`)) return;
-    await db.savingEntries.where('goalId').equals(goal.id).delete();
-    await db.savingGoals.delete(goal.id);
+  const handleDeleteGoal = async () => {
+    if (!deleteConfirmGoal?.id) return;
+    setIsDeleting(true);
+    try {
+      await db.savingEntries.where('goalId').equals(deleteConfirmGoal.id).delete();
+      await db.savingGoals.delete(deleteConfirmGoal.id);
+      setDeleteConfirmGoal(null);
+    } finally {
+      setIsDeleting(false);
+    }
   };
 
   const handleTopUp = async (amount: number, note: string, date: string) => {
@@ -238,7 +246,7 @@ export const SavingsPage: React.FC = () => {
               saved={savedMap.get(goal.id!) ?? 0}
               onTopUp={() => setTopUpGoal(goal)}
               onEdit={() => openEdit(goal)}
-              onDelete={() => handleDeleteGoal(goal)}
+              onDelete={() => setDeleteConfirmGoal(goal)}
               onHistory={() => setHistoryGoal(goal)}
             />
           ))}
@@ -277,6 +285,27 @@ export const SavingsPage: React.FC = () => {
         isOpen={!!historyGoal}
         onClose={() => setHistoryGoal(null)}
         goal={historyGoal}
+      />
+
+      {/* ── Delete Confirmation Modal ────────────────────── */}
+      <ConfirmModal
+        isOpen={!!deleteConfirmGoal}
+        onClose={() => setDeleteConfirmGoal(null)}
+        onConfirm={handleDeleteGoal}
+        isLoading={isDeleting}
+        title="Hapus Target Tabungan"
+        description={
+          <span>
+            Hapus target{' '}
+            <span className="font-bold text-slate-800">
+              {deleteConfirmGoal?.emoji} {deleteConfirmGoal?.name}
+            </span>
+            ? Semua riwayat top-up juga akan dihapus.
+          </span>
+        }
+        confirmText="Ya, Hapus"
+        cancelText="Batal"
+        variant="danger"
       />
     </div>
   );
