@@ -73,23 +73,23 @@ export const Modal: React.FC<ModalProps> = ({
       {/* Dimmed overlay */}
       <div className="absolute inset-0 bg-slate-900/50 glass-dark animate-fade-in" />
 
-      {/* Panel */}
+      {/* Panel — flex column so header stays sticky & body scrolls */}
       <div
         ref={panelRef}
         onClick={(e) => e.stopPropagation()}
         className={cn(
-          'relative z-10 w-full bg-white shadow-2xl overflow-y-auto',
-          // Mobile: bottom sheet; Desktop: centered dialog
+          'relative z-10 w-full bg-white shadow-2xl',
+          'flex flex-col',
+          // Mobile: bottom sheet fills up to 95vh; Desktop: centered
           'rounded-t-3xl sm:rounded-3xl',
-          'max-h-[92vh]',
+          'max-h-[95dvh] sm:max-h-[90dvh]',
           sizes[size],
-          // Enter animation
           'animate-slide-up sm:animate-scale-in',
         )}
       >
-        {/* Header */}
+        {/* Sticky Header */}
         {!hideHeader && (
-          <div className="sticky top-0 z-10 flex items-center justify-between px-5 pt-5 pb-4 border-b border-slate-100 bg-white rounded-t-3xl">
+          <div className="flex-shrink-0 flex items-center justify-between px-5 pt-5 pb-4 border-b border-slate-100 bg-white rounded-t-3xl">
             {/* Drag handle (mobile) */}
             <div className="absolute top-2.5 left-1/2 -translate-x-1/2 w-10 h-1 bg-slate-200 rounded-full sm:hidden" />
 
@@ -105,8 +105,8 @@ export const Modal: React.FC<ModalProps> = ({
           </div>
         )}
 
-        {/* Body */}
-        <div className="px-5 py-4 pb-safe">
+        {/* Scrollable Body */}
+        <div className="flex-1 overflow-y-auto px-5 py-4" style={{ paddingBottom: 'max(1.5rem, env(safe-area-inset-bottom, 1rem))' }}>
           {children}
         </div>
       </div>
