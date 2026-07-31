@@ -8,4 +8,5 @@ export { Card }         from './Card';
 export { CategoryIcon } from './CategoryIcon';
 export { Input }        from './Input';
 export { Modal }        from './Modal';
+export { ConfirmModal } from './ConfirmModal';
 export { ProgressBar }  from './ProgressBar';

@@ -216,15 +216,17 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
               {/* Donut chart */}
               <div className="h-44 w-full">
                 <ResponsiveContainer width="100%" height="100%">
-                  <PieChart>
+                  <PieChart style={{ outline: 'none' }}>
                     <Pie
                       data={categoryPieData}
                       cx="50%" cy="50%"
                       innerRadius={46} outerRadius={68}
                       paddingAngle={3} dataKey="value"
+                      stroke="none"
+                      style={{ outline: 'none' }}
                     >
                       {categoryPieData.map((entry, i) => (
-                        <Cell key={`cell-${i}`} fill={entry.color} />
+                        <Cell key={`cell-${i}`} fill={entry.color} stroke="none" style={{ outline: 'none' }} />
                       ))}
                     </Pie>
                     <Tooltip

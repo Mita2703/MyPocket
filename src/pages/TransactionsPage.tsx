@@ -4,6 +4,7 @@ import { Search, Trash2, ChevronDown } from 'lucide-react';
 
 import { db } from '../db/database';
 import { Card } from '../components/common/Card';
+import { ConfirmModal } from '../components/common/ConfirmModal';
 import { CategoryIcon } from '../components/common/CategoryIcon';
 import { formatRupiah } from '../utils/currency';
 import { formatDateReadable, getCurrentMonthYear } from '../utils/date';
@@ -15,6 +16,10 @@ export const TransactionsPage: React.FC = () => {
   const [filterType, setFilterType]           = useState<'all' | TransactionType>('all');
   const [selectedCategory, setSelectedCategory] = useState<string>('all');
   const [searchQuery, setSearchQuery]         = useState('');
+
+  // Delete modal state
+  const [deletingTx, setDeletingTx]           = useState<Transaction | null>(null);
+  const [isDeleting, setIsDeleting]           = useState(false);
 
   // ── Live Queries ────────────────────────────────────────────
   const transactions = useLiveQuery(() => db.transactions.orderBy('date').reverse().toArray(), []);
@@ -65,14 +70,21 @@ export const TransactionsPage: React.FC = () => {
     return { income, expense };
   }, [filteredTransactions]);
 
-  const handleDelete = async (id?: number) => {
-    if (!id) return;
-    if (confirm('Hapus transaksi ini?')) {
-      await db.transactions.delete(id);
+  const handleConfirmDelete = async () => {
+    if (!deletingTx?.id) return;
+    setIsDeleting(true);
+    try {
+      await db.transactions.delete(deletingTx.id);
+      setDeletingTx(null);
+    } catch (err) {
+      console.error('Error deleting transaction:', err);
+    } finally {
+      setIsDeleting(false);
     }
   };
 
   const isLoading = transactions === undefined;
+  const deletingCat = deletingTx ? categoryMap.get(deletingTx.categoryId) : null;
 
   return (
     <div className="flex flex-col gap-3 px-4 pt-3 pb-6">
@@ -234,7 +246,7 @@ export const TransactionsPage: React.FC = () => {
                           )}
                         </div>
 
-                        {/* Amount + Delete */}
+                        {/* Amount + Delete Button */}
                         <div className="flex items-center gap-2 shrink-0">
                           <span className={cn(
                             'text-xs font-extrabold tabular-nums',
@@ -244,11 +256,12 @@ export const TransactionsPage: React.FC = () => {
                           </span>
 
                           <button
-                            onClick={() => handleDelete(tx.id)}
-                            className="p-1.5 text-slate-200 hover:text-red-500 hover:bg-red-50 rounded-lg opacity-0 group-hover:opacity-100 transition-all"
+                            onClick={() => setDeletingTx(tx)}
+                            className="p-2 text-rose-300 hover:text-rose-600 hover:bg-rose-50 rounded-xl transition-all tap-feedback"
+                            title="Hapus transaksi"
                             aria-label="Hapus transaksi"
                           >
-                            <Trash2 size={14} />
+                            <Trash2 size={16} />
                           </button>
                         </div>
                       </div>
@@ -266,6 +279,56 @@ export const TransactionsPage: React.FC = () => {
           <p className="text-xs text-slate-300 mt-1">Coba ubah filter atau tambah transaksi baru</p>
         </Card>
       )}
+
+      {/* ── Custom Styled Confirm Modal for Transaction Deletion ── */}
+      <ConfirmModal
+        isOpen={Boolean(deletingTx)}
+        onClose={() => setDeletingTx(null)}
+        onConfirm={handleConfirmDelete}
+        title="Hapus Transaksi?"
+        isLoading={isDeleting}
+        confirmText="Hapus Transaksi"
+        cancelText="Batal"
+        description={
+          deletingTx ? (
+            <div className="space-y-3 my-2">
+              <p className="text-slate-500 text-xs">
+                Apakah Anda yakin ingin menghapus catatan transaksi ini?
+              </p>
+
+              {/* Item preview card */}
+              <div className="bg-slate-50 border border-slate-200/80 rounded-2xl p-3 flex items-center justify-between text-left">
+                <div className="flex items-center gap-3">
+                  <div
+                    className="w-10 h-10 rounded-xl flex items-center justify-center text-white shadow-xs shrink-0"
+                    style={{ backgroundColor: deletingCat?.color || '#C96068' }}
+                  >
+                    <CategoryIcon name={deletingCat?.icon || 'Circle'} size={18} />
+                  </div>
+                  <div>
+                    <p className="text-xs font-bold text-slate-800">
+                      {deletingCat?.name || deletingTx.categoryId}
+                    </p>
+                    <p className="text-[10px] text-slate-400">
+                      {formatDateReadable(deletingTx.date)}{deletingTx.note ? ` · ${deletingTx.note}` : ''}
+                    </p>
+                  </div>
+                </div>
+
+                <span
+                  className={cn(
+                    'text-xs font-extrabold tabular-nums shrink-0',
+                    deletingTx.type === 'income' ? 'text-emerald-600' : 'text-slate-800'
+                  )}
+                >
+                  {deletingTx.type === 'income' ? '+' : '-'}{formatRupiah(deletingTx.amount)}
+                </span>
+              </div>
+            </div>
+          ) : undefined
+        }
+      />
+
     </div>
   );
 };

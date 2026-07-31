@@ -6,21 +6,24 @@ import { db } from '../db/database';
 import { Card } from '../components/common/Card';
 import { Button } from '../components/common/Button';
 import { Modal } from '../components/common/Modal';
+import { ConfirmModal } from '../components/common/ConfirmModal';
 import { Input } from '../components/common/Input';
 import { DEFAULT_CATEGORIES } from '../db/defaultCategories';
 import { cn } from '../utils/cn';
 import { Transaction, Category } from '../types';
 
 export const SettingsPage: React.FC = () => {
-  const [isAddCatOpen, setIsAddCatOpen] = useState(false);
-  const [catName, setCatName] = useState('');
-  const [catType, setCatType] = useState<'expense' | 'income'>('expense');
-  const [isAdding, setIsAdding] = useState(false);
-  const [isExporting, setIsExporting] = useState(false);
+  const [isAddCatOpen, setIsAddCatOpen]   = useState(false);
+  const [isResetModalOpen, setIsResetModalOpen] = useState(false);
+  const [catName, setCatName]             = useState('');
+  const [catType, setCatType]             = useState<'expense' | 'income'>('expense');
+  const [isAdding, setIsAdding]           = useState(false);
+  const [isExporting, setIsExporting]     = useState(false);
+  const [isResetting, setIsResetting]     = useState(false);
   const [exportSuccess, setExportSuccess] = useState(false);
 
   const transactionsCount = useLiveQuery(() => db.transactions.count(), []);
-  const categoriesCount = useLiveQuery(() => db.categories.count(), []);
+  const categoriesCount   = useLiveQuery(() => db.categories.count(), []);
 
   // Export CSV helper
   const handleExportCSV = async () => {
@@ -56,13 +59,18 @@ export const SettingsPage: React.FC = () => {
   };
 
   // Reset database helper
-  const handleResetData = async () => {
-    if (confirm('PERINGATAN: Seluruh data transaksi dan budget lokal akan dihapus permanen! Lanjutkan?')) {
+  const handleConfirmReset = async () => {
+    setIsResetting(true);
+    try {
       await db.transactions.clear();
       await db.budgets.clear();
       await db.categories.clear();
       await db.categories.bulkAdd(DEFAULT_CATEGORIES);
-      alert('Data berhasil di-reset ke kondisi awal.');
+      setIsResetModalOpen(false);
+    } catch (err) {
+      console.error('Error resetting database:', err);
+    } finally {
+      setIsResetting(false);
     }
   };
 
@@ -154,7 +162,7 @@ export const SettingsPage: React.FC = () => {
           <Button
             variant="ghost"
             fullWidth
-            onClick={handleResetData}
+            onClick={() => setIsResetModalOpen(true)}
             leftIcon={<RefreshCw size={16} />}
             className="justify-start text-xs text-red-600 hover:bg-red-50 hover:text-red-700"
           >
@@ -201,6 +209,22 @@ export const SettingsPage: React.FC = () => {
           </Button>
         </form>
       </Modal>
+
+      {/* Confirm Reset Data Modal */}
+      <ConfirmModal
+        isOpen={isResetModalOpen}
+        onClose={() => setIsResetModalOpen(false)}
+        onConfirm={handleConfirmReset}
+        title="Reset Data Aplikasi?"
+        confirmText="Ya, Reset Data"
+        cancelText="Batal"
+        isLoading={isResetting}
+        description={
+          <span className="text-xs text-slate-600 block mt-1">
+            PERINGATAN: Seluruh catatan transaksi dan limit anggaran akan dihapus permanen dari perangkat Anda. Data akan dikembalikan ke kondisi awal.
+          </span>
+        }
+      />
     </div>
   );
 };
