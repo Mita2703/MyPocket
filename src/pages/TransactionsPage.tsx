@@ -1,6 +1,6 @@
-import React, { useMemo, useState } from 'react';
+import React, { useMemo, useRef, useEffect, useState } from 'react';
 import { useLiveQuery } from 'dexie-react-hooks';
-import { Search, Trash2, ChevronDown } from 'lucide-react';
+import { Search, Trash2, ChevronDown, CalendarDays, CheckCircle2 } from 'lucide-react';
 
 import { db } from '../db/database';
 import { Card } from '../components/common/Card';
@@ -118,22 +118,12 @@ export const TransactionsPage: React.FC = () => {
           />
         </div>
 
-        {/* ── Month Select Dropdown with "Semua Riwayat" option at the top ── */}
-        <div className="relative">
-          <select
-            value={selectedMonth}
-            onChange={(e) => setSelectedMonth(e.target.value)}
-            className="appearance-none py-2.5 pl-3 pr-8 bg-white border border-slate-200 rounded-xl text-xs font-semibold text-slate-700 focus:outline-none focus:ring-2 focus:ring-rose-400 cursor-pointer"
-          >
-            <option value="">Semua Riwayat</option>
-            {monthOptions.map((m) => (
-              <option key={m.value} value={m.value}>
-                {m.label}
-              </option>
-            ))}
-          </select>
-          <ChevronDown size={14} className="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" />
-        </div>
+        {/* ── Custom Month Dropdown ───────────────────────── */}
+        <MonthDropdown
+          value={selectedMonth}
+          options={monthOptions}
+          onChange={setSelectedMonth}
+        />
       </div>
 
       {/* ── Type Filter Tabs ──────────────────────────────── */}
@@ -373,3 +363,98 @@ const PillBtn: React.FC<{
     {label}
   </button>
 );
+
+/* ── Custom Month Dropdown (rose-themed) ──────────────────── */
+const MonthDropdown: React.FC<{
+  value: string;
+  options: { value: string; label: string }[];
+  onChange: (val: string) => void;
+}> = ({ value, options, onChange }) => {
+  const [open, setOpen] = useState(false);
+  const ref = useRef<HTMLDivElement>(null);
+
+  // Close on outside click
+  useEffect(() => {
+    const handler = (e: MouseEvent) => {
+      if (ref.current && !ref.current.contains(e.target as Node)) {
+        setOpen(false);
+      }
+    };
+    document.addEventListener('mousedown', handler);
+    return () => document.removeEventListener('mousedown', handler);
+  }, []);
+
+  const displayLabel = value
+    ? options.find((o) => o.value === value)?.label ?? value
+    : 'Semua Riwayat';
+
+  const allOptions = [{ value: '', label: 'Semua Riwayat' }, ...options];
+
+  return (
+    <div ref={ref} className="relative z-20">
+      {/* Trigger button */}
+      <button
+        type="button"
+        onClick={() => setOpen((prev) => !prev)}
+        className={cn(
+          'flex items-center gap-2 px-3 py-2.5 rounded-xl text-xs font-semibold transition-all duration-150 border whitespace-nowrap',
+          open
+            ? 'bg-rose-500 text-white border-rose-500 shadow-sm shadow-rose-200'
+            : value
+            ? 'bg-rose-50 text-rose-700 border-rose-200'
+            : 'bg-white text-slate-700 border-slate-200 hover:border-slate-300',
+        )}
+        aria-haspopup="listbox"
+        aria-expanded={open}
+      >
+        <CalendarDays size={13} className={open ? 'text-white' : value ? 'text-rose-500' : 'text-slate-400'} />
+        <span>{displayLabel}</span>
+        <ChevronDown
+          size={13}
+          className={cn('transition-transform duration-200', open && 'rotate-180')}
+        />
+      </button>
+
+      {/* Dropdown panel */}
+      {open && (
+        <div
+          role="listbox"
+          className="absolute right-0 mt-2 min-w-[160px] bg-white border border-slate-100 rounded-2xl shadow-xl overflow-hidden animate-fade-up"
+        >
+          {/* Header */}
+          <div className="px-3.5 py-2 bg-rose-50 border-b border-rose-100">
+            <p className="text-[10px] font-bold text-rose-400 uppercase tracking-wider">Filter Periode</p>
+          </div>
+
+          {/* Options */}
+          <div className="py-1 max-h-52 overflow-y-auto">
+            {allOptions.map((opt) => {
+              const isSelected = opt.value === value;
+              return (
+                <button
+                  key={opt.value}
+                  role="option"
+                  aria-selected={isSelected}
+                  onClick={() => { onChange(opt.value); setOpen(false); }}
+                  className={cn(
+                    'w-full flex items-center justify-between gap-3 px-3.5 py-2.5 text-xs font-semibold transition-colors text-left',
+                    isSelected
+                      ? 'bg-rose-50 text-rose-700'
+                      : opt.value === ''
+                      ? 'text-slate-500 hover:bg-slate-50'
+                      : 'text-slate-700 hover:bg-slate-50',
+                  )}
+                >
+                  <span>{opt.label}</span>
+                  {isSelected && (
+                    <CheckCircle2 size={13} className="text-rose-500 shrink-0" />
+                  )}
+                </button>
+              );
+            })}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+};
