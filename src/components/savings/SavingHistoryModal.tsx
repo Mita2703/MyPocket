@@ -67,9 +67,13 @@ export const SavingHistoryModal: React.FC<SavingHistoryModalProps> = ({
                 key={entry.id}
                 className="flex items-center gap-3 bg-slate-50 rounded-xl px-3.5 py-3 border border-slate-100 group"
               >
-                {/* Left — emoji dot */}
-                <div className="w-8 h-8 rounded-lg bg-rose-100 flex items-center justify-center shrink-0">
-                  <span className="text-sm">{goal.emoji}</span>
+                {/* Left — photo dot */}
+                <div className="w-8 h-8 rounded-lg bg-rose-100 flex items-center justify-center shrink-0 overflow-hidden">
+                  {goal.photo ? (
+                    <img src={goal.photo} alt={goal.name} className="w-full h-full object-cover" />
+                  ) : (
+                    <span className="text-sm">💰</span>
+                  )}
                 </div>
 
                 {/* Middle */}

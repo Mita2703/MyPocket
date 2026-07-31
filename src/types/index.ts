@@ -38,7 +38,8 @@ export interface SavingGoal {
   name: string;          // e.g. "Laptop Gaming"
   targetAmount: number;  // Nominal yang ingin dicapai
   targetDate?: string;   // YYYY-MM-DD, opsional
-  emoji: string;         // Emoji ikon (e.g. "💻")
+  emoji?: string;        // Emoji ikon (e.g. "💻"), optional
+  photo?: string;        // Base64 string of photo, optional
   createdAt: string;
 }
 

@@ -60,7 +60,13 @@ export const TopUpModal: React.FC<TopUpModalProps> = ({
         {/* ── Goal summary card ── */}
         <div className="bg-gradient-to-br from-rose-50 to-pink-50 border border-rose-100 rounded-2xl p-4">
           <div className="flex items-center gap-3 mb-3">
-            <span className="text-3xl">{goal.emoji}</span>
+            <div className="w-12 h-12 rounded-xl overflow-hidden shrink-0 border border-rose-100 flex items-center justify-center bg-white">
+              {goal.photo ? (
+                <img src={goal.photo} alt={goal.name} className="w-full h-full object-cover" />
+              ) : (
+                <span className="text-xl">💰</span>
+              )}
+            </div>
             <div className="flex-1 min-w-0">
               <p className="text-sm font-bold text-slate-800 truncate">{goal.name}</p>
               <p className="text-xs text-slate-500">

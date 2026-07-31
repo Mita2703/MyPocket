@@ -1,17 +1,11 @@
-import React, { useState, useEffect } from 'react';
-import { Target, CalendarDays } from 'lucide-react';
+import React, { useState, useEffect, useRef } from 'react';
+import { Target, CalendarDays, Camera, X } from 'lucide-react';
 import { Modal } from '../common/Modal';
 import { Button } from '../common/Button';
 import { SavingGoal } from '../../types';
 import { formatNumber, parseRawAmount } from '../../utils/currency';
 import { getCurrentDateISO } from '../../utils/date';
 import { cn } from '../../utils/cn';
-
-const EMOJI_OPTIONS = [
-  '💻', '📱', '🧴', '✈️', '👟', '📚', '🎮', '🏠',
-  '💄', '🎵', '🚗', '⌚', '📷', '🎒', '🍕', '💍',
-  '🏋️', '🎨', '🎁', '🌴', '💰', '🛒', '🎓', '🐾',
-];
 
 interface SavingGoalFormModalProps {
   isOpen: boolean;
@@ -32,8 +26,10 @@ export const SavingGoalFormModal: React.FC<SavingGoalFormModalProps> = ({
   const [name, setName]               = useState('');
   const [targetAmount, setTargetAmount] = useState('');
   const [targetDate, setTargetDate]   = useState('');
-  const [emoji, setEmoji]             = useState('💰');
+  const [photo, setPhoto]             = useState('');
+  const [fileError, setFileError]     = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   // Prefill on edit
   useEffect(() => {
@@ -41,14 +37,44 @@ export const SavingGoalFormModal: React.FC<SavingGoalFormModalProps> = ({
       setName(editGoal.name);
       setTargetAmount(formatNumber(editGoal.targetAmount));
       setTargetDate(editGoal.targetDate || '');
-      setEmoji(editGoal.emoji);
+      setPhoto(editGoal.photo || '');
+      setFileError(null);
     } else {
       setName('');
       setTargetAmount('');
       setTargetDate('');
-      setEmoji('💰');
+      setPhoto('');
+      setFileError(null);
     }
   }, [editGoal, isOpen]);
+
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setFileError(null);
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    // Check size limit: 2MB
+    if (file.size > 2 * 1024 * 1024) {
+      setFileError('Ukuran foto terlalu besar (maksimal 2MB)');
+      if (fileInputRef.current) fileInputRef.current.value = '';
+      return;
+    }
+
+    const reader = new FileReader();
+    reader.onloadend = () => {
+      setPhoto(reader.result as string);
+    };
+    reader.onerror = () => {
+      setFileError('Gagal membaca file gambar');
+    };
+    reader.readAsDataURL(file);
+  };
+
+  const handleRemovePhoto = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    setPhoto('');
+    if (fileInputRef.current) fileInputRef.current.value = '';
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -61,7 +87,7 @@ export const SavingGoalFormModal: React.FC<SavingGoalFormModalProps> = ({
         name: name.trim(),
         targetAmount: amount,
         targetDate: targetDate || undefined,
-        emoji,
+        photo: photo || undefined,
       });
       onClose();
     } finally {
@@ -77,33 +103,63 @@ export const SavingGoalFormModal: React.FC<SavingGoalFormModalProps> = ({
     >
       <form onSubmit={handleSubmit} className="space-y-5">
 
-        {/* ── Emoji Picker ── */}
+        {/* ── Photo Uploader ── */}
         <div>
           <label className="block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-2">
-            Pilih Ikon
+            Foto Target
           </label>
-          <div className="grid grid-cols-8 gap-1.5">
-            {EMOJI_OPTIONS.map((e) => (
-              <button
-                key={e}
-                type="button"
-                onClick={() => setEmoji(e)}
-                className={cn(
-                  'h-9 w-full rounded-xl text-xl flex items-center justify-center border-2 transition-all',
-                  emoji === e
-                    ? 'border-rose-400 bg-rose-50 scale-110'
-                    : 'border-transparent bg-slate-50 hover:bg-slate-100',
-                )}
-              >
-                {e}
-              </button>
-            ))}
+          <input
+            type="file"
+            ref={fileInputRef}
+            accept="image/*"
+            capture="environment"
+            className="hidden"
+            onChange={handleFileChange}
+          />
+          <div
+            onClick={() => fileInputRef.current?.click()}
+            className={cn(
+              'relative w-full h-36 rounded-2xl border-2 border-dashed flex flex-col items-center justify-center cursor-pointer transition-all overflow-hidden bg-slate-50',
+              photo ? 'border-rose-300' : 'border-slate-200 hover:border-rose-400 hover:bg-slate-50/50'
+            )}
+          >
+            {photo ? (
+              <>
+                <img src={photo} alt="Preview" className="w-full h-full object-cover" />
+                <button
+                  type="button"
+                  onClick={handleRemovePhoto}
+                  className="absolute top-2 right-2 w-8 h-8 rounded-full bg-slate-900/60 text-white flex items-center justify-center hover:bg-slate-900/80 transition-colors shadow-sm"
+                  title="Hapus foto"
+                >
+                  <X size={14} />
+                </button>
+                <div className="absolute bottom-2 left-2 bg-slate-900/60 text-white text-[10px] font-semibold px-2 py-0.5 rounded-md">
+                  Ganti Foto
+                </div>
+              </>
+            ) : (
+              <div className="text-center p-4">
+                <Camera size={26} className="mx-auto text-slate-400 mb-1.5 animate-pulse-soft" />
+                <p className="text-xs font-bold text-slate-600">Tambah Foto Target</p>
+                <p className="text-[10px] text-slate-400 mt-0.5">Kamera atau Galeri (Maks. 2MB)</p>
+              </div>
+            )}
           </div>
+          {fileError && (
+            <p className="text-[11px] font-semibold text-red-500 mt-1.5 ml-1">{fileError}</p>
+          )}
         </div>
 
         {/* ── Selected preview ── */}
         <div className="flex items-center gap-3 bg-slate-50 rounded-2xl px-4 py-3 border border-slate-100">
-          <span className="text-3xl">{emoji}</span>
+          <div className="w-10 h-10 rounded-xl bg-rose-50 flex items-center justify-center overflow-hidden shrink-0 border border-rose-100/50">
+            {photo ? (
+              <img src={photo} alt="Preview" className="w-full h-full object-cover" />
+            ) : (
+              <Camera size={18} className="text-rose-400" />
+            )}
+          </div>
           <div className="flex-1 min-w-0">
             <p className="text-sm font-bold text-slate-800 truncate">{name || 'Nama target...'}</p>
             <p className="text-xs text-slate-400">
@@ -126,7 +182,6 @@ export const SavingGoalFormModal: React.FC<SavingGoalFormModalProps> = ({
             onChange={(e) => setName(e.target.value)}
             placeholder="Contoh: Laptop Gaming, Liburan Bali..."
             required
-            autoFocus
             maxLength={50}
             className="w-full px-3.5 py-2.5 rounded-xl text-sm bg-slate-50 border border-slate-200 text-slate-800 placeholder:text-slate-300 focus:outline-none focus:ring-2 focus:ring-rose-400 focus:bg-white transition-all"
           />

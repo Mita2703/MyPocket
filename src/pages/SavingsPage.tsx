@@ -298,7 +298,7 @@ export const SavingsPage: React.FC = () => {
           <span>
             Hapus target{' '}
             <span className="font-bold text-slate-800">
-              {deleteConfirmGoal?.emoji} {deleteConfirmGoal?.name}
+              {deleteConfirmGoal?.name}
             </span>
             ? Semua riwayat top-up juga akan dihapus.
           </span>
@@ -355,12 +355,16 @@ const GoalCard: React.FC<GoalCardProps> = ({ goal, saved, onTopUp, onEdit, onDel
       <div className="p-4 space-y-3">
         {/* ── Header row ── */}
         <div className="flex items-start gap-3">
-          {/* Emoji badge */}
+          {/* Photo badge */}
           <div className={cn(
-            'w-12 h-12 rounded-2xl flex items-center justify-center text-2xl shrink-0',
+            'w-12 h-12 rounded-2xl flex items-center justify-center overflow-hidden shrink-0 border border-slate-100 bg-white',
             achieved ? 'bg-rose-50' : 'bg-slate-50',
           )}>
-            {goal.emoji}
+            {goal.photo ? (
+              <img src={goal.photo} alt={goal.name} className="w-full h-full object-cover" />
+            ) : (
+              <span className="text-xl">💰</span>
+            )}
           </div>
 
           <div className="flex-1 min-w-0">
