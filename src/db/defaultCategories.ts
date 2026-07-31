@@ -11,9 +11,9 @@ export const DEFAULT_CATEGORIES: Category[] = [
   { id: 'belanja', name: 'Belanja Harian', icon: 'ShoppingBag', color: '#D9777F', type: 'expense', isDefault: true },
   { id: 'lain_pengeluaran', name: 'Pengeluaran Lain', icon: 'MoreHorizontal', color: '#9CA3AF', type: 'expense', isDefault: true },
 
-  // Pemasukan (Income)
-  { id: 'uang_saku', name: 'Uang Saku', icon: 'Wallet', color: '#10B981', type: 'income', isDefault: true },
-  { id: 'gaji', name: 'Gaji / Beasiswa', icon: 'Briefcase', color: '#059669', type: 'income', isDefault: true },
-  { id: 'freelance', name: 'Freelance / Usaha', icon: 'Laptop', color: '#047857', type: 'income', isDefault: true },
-  { id: 'lain_pemasukan', name: 'Pemasukan Lain', icon: 'PlusCircle', color: '#6EE7B7', type: 'income', isDefault: true },
+  // Pemasukan (Income) - No green, cohesive Rose/Slate/Brown palette
+  { id: 'uang_saku', name: 'Uang Saku', icon: 'Wallet', color: '#D48C94', type: 'income', isDefault: true },
+  { id: 'gaji', name: 'Gaji / Beasiswa', icon: 'Briefcase', color: '#9C6167', type: 'income', isDefault: true },
+  { id: 'freelance', name: 'Freelance / Usaha', icon: 'Laptop', color: '#6E4D50', type: 'income', isDefault: true },
+  { id: 'lain_pemasukan', name: 'Pemasukan Lain', icon: 'PlusCircle', color: '#B0A0A2', type: 'income', isDefault: true },
 ];

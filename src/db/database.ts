@@ -64,14 +64,18 @@ export class MyPocketDatabase extends Dexie {
 
 export const db = new MyPocketDatabase();
 
-// Helper to ensure database has default categories and initial seed data
 export async function ensureSeedData() {
   try {
     const categoryCount = await db.categories.count();
     if (categoryCount === 0) {
       await db.categories.bulkAdd(DEFAULT_CATEGORIES);
+    } else {
+      // Update default category colors for existing databases
+      for (const cat of DEFAULT_CATEGORIES) {
+        await db.categories.update(cat.id, { color: cat.color });
+      }
     }
   } catch (err) {
-    console.error('Failed to seed default categories:', err);
+    console.error('Failed to seed or update default categories:', err);
   }
 }
