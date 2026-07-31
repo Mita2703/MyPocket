@@ -8,6 +8,7 @@ import { formatRupiah } from '../utils/currency';
 import { formatDateReadable, getCurrentMonthYear } from '../utils/date';
 import { TrendingDown, TrendingUp, AlertCircle, ChevronRight, PieChartIcon, BarChart3 } from 'lucide-react';
 import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip, BarChart, Bar, XAxis, YAxis } from 'recharts';
+import { Transaction, Category, Budget } from '../types';
 
 interface DashboardPageProps {
   onNavigateToTransactions: () => void;
@@ -29,7 +30,7 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
   // Category map helper
   const categoryMap = useMemo(() => {
     const map = new Map<string, { name: string; icon: string; color: string }>();
-    categories?.forEach((c) => map.set(c.id, { name: c.name, icon: c.icon, color: c.color }));
+    categories?.forEach((c: Category) => map.set(c.id, { name: c.name, icon: c.icon, color: c.color }));
     return map;
   }, [categories]);
 
@@ -40,7 +41,7 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
     let totalIncome = 0;
     let totalExpense = 0;
 
-    transactions.forEach((tx) => {
+    transactions.forEach((tx: Transaction) => {
       if (tx.date.startsWith(currentMonth)) {
         if (tx.type === 'income') totalIncome += tx.amount;
         if (tx.type === 'expense') totalExpense += tx.amount;
@@ -59,7 +60,7 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
     if (!transactions) return [];
     const totals: Record<string, number> = {};
 
-    transactions.forEach((tx) => {
+    transactions.forEach((tx: Transaction) => {
       if (tx.type === 'expense' && tx.date.startsWith(currentMonth)) {
         totals[tx.categoryId] = (totals[tx.categoryId] || 0) + tx.amount;
       }
@@ -88,7 +89,7 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
       last7Days.push({ date: isoDate, displayDate, amount: 0 });
     }
 
-    transactions.forEach((tx) => {
+    transactions.forEach((tx: Transaction) => {
       if (tx.type === 'expense') {
         const found = last7Days.find((item) => item.date === tx.date);
         if (found) {
@@ -105,13 +106,13 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
     if (!budgets || !transactions) return [];
 
     const categorySpent: Record<string, number> = {};
-    transactions.forEach((tx) => {
+    transactions.forEach((tx: Transaction) => {
       if (tx.type === 'expense' && tx.date.startsWith(currentMonth)) {
         categorySpent[tx.categoryId] = (categorySpent[tx.categoryId] || 0) + tx.amount;
       }
     });
 
-    return budgets.map((b) => {
+    return budgets.map((b: Budget) => {
       const spent = categorySpent[b.categoryId] || 0;
       const pct = (spent / b.amountLimit) * 100;
       const cat = categoryMap.get(b.categoryId);
@@ -122,7 +123,7 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
         spent,
         pct,
       };
-    }).filter((item) => item.pct >= 70);
+    }).filter((item: { pct: number }) => item.pct >= 70);
   }, [budgets, transactions, categoryMap, currentMonth]);
 
   const recentTransactions = transactions?.slice(0, 5) || [];
@@ -176,7 +177,7 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
               Detail <ChevronRight size={12} />
             </button>
           </div>
-          {budgetAlerts.slice(0, 2).map((alert) => (
+          {budgetAlerts.slice(0, 2).map((alert: { categoryId: string; name: string; limit: number; spent: number; pct: number }) => (
             <div key={alert.categoryId} className="bg-white/80 rounded-xl p-2.5 shadow-2xs">
               <ProgressBar
                 value={alert.pct}
@@ -188,15 +189,15 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
         </div>
       )}
 
-      {/* Visual Analytics Charts Card */}
+      {/* Chart Section */}
       <Card>
         <div className="flex items-center justify-between mb-3">
           <h3 className="text-sm font-bold text-slate-800">Analisis Pengeluaran</h3>
-          <div className="flex bg-slate-100 p-0.5 rounded-lg text-xs font-medium">
+          <div className="flex bg-slate-100 p-0.5 rounded-lg text-xs font-semibold text-slate-600">
             <button
               onClick={() => setChartType('pie')}
               className={`flex items-center gap-1 px-2.5 py-1 rounded-md transition-all ${
-                chartType === 'pie' ? 'bg-white font-bold text-rose-600 shadow-2xs' : 'text-slate-500'
+                chartType === 'pie' ? 'bg-white text-rose-700 shadow-2xs' : 'hover:text-slate-900'
               }`}
             >
               <PieChartIcon size={14} /> Pie
@@ -204,7 +205,7 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
             <button
               onClick={() => setChartType('bar')}
               className={`flex items-center gap-1 px-2.5 py-1 rounded-md transition-all ${
-                chartType === 'bar' ? 'bg-white font-bold text-rose-600 shadow-2xs' : 'text-slate-500'
+                chartType === 'bar' ? 'bg-white text-rose-700 shadow-2xs' : 'hover:text-slate-900'
               }`}
             >
               <BarChart3 size={14} /> Tren
@@ -214,41 +215,56 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
 
         {chartType === 'pie' ? (
           categoryPieData.length > 0 ? (
-            <div className="h-52 w-full flex items-center justify-center">
-              <ResponsiveContainer width="100%" height="100%">
-                <PieChart>
-                  <Pie
-                    data={categoryPieData}
-                    cx="50%"
-                    cy="50%"
-                    innerRadius={45}
-                    outerRadius={75}
-                    paddingAngle={3}
-                    dataKey="value"
-                  >
-                    {categoryPieData.map((entry, index) => (
-                      <Cell key={`cell-${index}`} fill={entry.color} />
-                    ))}
-                  </Pie>
-                  <Tooltip
-                    formatter={(value: number) => [formatRupiah(value), 'Pengeluaran']}
-                    contentStyle={{ borderRadius: '12px', fontSize: '12px' }}
-                  />
-                </PieChart>
-              </ResponsiveContainer>
+            <div>
+              <div className="h-44 w-full">
+                <ResponsiveContainer width="100%" height="100%">
+                  <PieChart>
+                    <Pie
+                      data={categoryPieData}
+                      cx="50%"
+                      cy="50%"
+                      innerRadius={45}
+                      outerRadius={65}
+                      paddingAngle={3}
+                      dataKey="value"
+                    >
+                      {categoryPieData.map((entry, index) => (
+                        <Cell key={`cell-${index}`} fill={entry.color} />
+                      ))}
+                    </Pie>
+                    <Tooltip
+                      formatter={(val: number) => [formatRupiah(val), 'Pengeluaran']}
+                      contentStyle={{ borderRadius: '12px', border: 'none', boxShadow: '0 4px 12px rgba(0,0,0,0.1)' }}
+                    />
+                  </PieChart>
+                </ResponsiveContainer>
+              </div>
+
+              {/* Legend List */}
+              <div className="grid grid-cols-2 gap-2 mt-2 pt-2 border-t border-slate-100 text-xs">
+                {categoryPieData.slice(0, 4).map((cat, idx) => (
+                  <div key={idx} className="flex items-center gap-1.5 truncate">
+                    <span className="w-2.5 h-2.5 rounded-full shrink-0" style={{ backgroundColor: cat.color }} />
+                    <span className="text-slate-600 truncate">{cat.name}</span>
+                    <span className="font-bold text-slate-800 ml-auto">{formatRupiah(cat.value)}</span>
+                  </div>
+                ))}
+              </div>
             </div>
           ) : (
-            <div className="py-8 text-center text-xs text-slate-400">Belum ada pengeluaran bulan ini</div>
+            <div className="h-40 flex items-center justify-center text-xs text-slate-400">
+              Belum ada data pengeluaran bulan ini
+            </div>
           )
         ) : (
-          <div className="h-52 w-full pt-2">
+          <div className="h-48 w-full pt-2">
             <ResponsiveContainer width="100%" height="100%">
-              <BarChart data={dailyBarData}>
-                <XAxis dataKey="displayDate" tick={{ fontSize: 10 }} />
-                <YAxis hide />
+              <BarChart data={dailyBarData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
+                <XAxis dataKey="displayDate" tick={{ fontSize: 10, fill: '#64748B' }} axisLine={false} tickLine={false} />
+                <YAxis tick={{ fontSize: 10, fill: '#64748B' }} axisLine={false} tickLine={false} />
                 <Tooltip
-                  formatter={(value: number) => [formatRupiah(value), 'Pengeluaran']}
-                  contentStyle={{ borderRadius: '12px', fontSize: '12px' }}
+                  formatter={(val: number) => [formatRupiah(val), 'Total']}
+                  contentStyle={{ borderRadius: '12px', border: 'none', boxShadow: '0 4px 12px rgba(0,0,0,0.1)' }}
                 />
                 <Bar dataKey="amount" fill="#C96068" radius={[6, 6, 0, 0]} />
               </BarChart>
@@ -271,7 +287,7 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
 
         <div className="space-y-2.5">
           {recentTransactions.length > 0 ? (
-            recentTransactions.map((tx) => {
+            recentTransactions.map((tx: Transaction) => {
               const cat = categoryMap.get(tx.categoryId);
               return (
                 <div key={tx.id} className="flex items-center justify-between p-2 rounded-xl hover:bg-slate-50 transition-colors">

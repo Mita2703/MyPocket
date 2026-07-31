@@ -6,6 +6,7 @@ import { Button } from '../components/common/Button';
 import { Modal } from '../components/common/Modal';
 import { DEFAULT_CATEGORIES } from '../db/defaultCategories';
 import { Download, RefreshCw, Plus, ShieldCheck, Database, Info } from 'lucide-react';
+import { Transaction, Category } from '../types';
 
 export const SettingsPage: React.FC = () => {
   const [isAddCatOpen, setIsAddCatOpen] = useState(false);
@@ -19,10 +20,10 @@ export const SettingsPage: React.FC = () => {
   const handleExportCSV = async () => {
     const transactions = await db.transactions.toArray();
     const categories = await db.categories.toArray();
-    const catMap = new Map(categories.map((c) => [c.id, c.name]));
+    const catMap = new Map(categories.map((c: Category) => [c.id, c.name]));
 
     let csvContent = 'ID,Tanggal,Tipe,Kategori,Nominal,Catatan\n';
-    transactions.forEach((tx) => {
+    transactions.forEach((tx: Transaction) => {
       const categoryName = catMap.get(tx.categoryId) || tx.categoryId;
       const note = tx.note ? `"${tx.note.replace(/"/g, '""')}"` : '';
       csvContent += `${tx.id},${tx.date},${tx.type},"${categoryName}",${tx.amount},${note}\n`;

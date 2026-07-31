@@ -1,201 +1,320 @@
-import React, { useState } from 'react';
+import React, { useState, useCallback } from 'react';
 import { useLiveQuery } from 'dexie-react-hooks';
+import { MinusCircle, PlusCircle, CalendarDays, StickyNote, CheckCircle2 } from 'lucide-react';
 import { db } from '../../db/database';
 import { Modal } from '../common/Modal';
 import { Button } from '../common/Button';
 import { CategoryIcon } from '../common/CategoryIcon';
-import { TransactionType } from '../../types';
+import { TransactionType, Category } from '../../types';
 import { formatNumber, parseRawAmount } from '../../utils/currency';
 import { getCurrentDateISO } from '../../utils/date';
-import { PlusCircle, MinusCircle } from 'lucide-react';
+import { cn } from '../../utils/cn';
 
 interface TransactionFormModalProps {
   isOpen: boolean;
   onClose: () => void;
+  /** Pre-fill type (optional, for quick-add shortcuts) */
+  defaultType?: TransactionType;
 }
 
-export const TransactionFormModal: React.FC<TransactionFormModalProps> = ({ isOpen, onClose }) => {
-  const [type, setType] = useState<TransactionType>('expense');
+export const TransactionFormModal: React.FC<TransactionFormModalProps> = ({
+  isOpen,
+  onClose,
+  defaultType = 'expense',
+}) => {
+  const [type, setType]               = useState<TransactionType>(defaultType);
   const [displayAmount, setDisplayAmount] = useState('');
-  const [categoryId, setCategoryId] = useState('');
-  const [date, setDate] = useState(getCurrentDateISO());
-  const [note, setNote] = useState('');
+  const [categoryId, setCategoryId]   = useState('');
+  const [date, setDate]               = useState(getCurrentDateISO());
+  const [note, setNote]               = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [saveSuccess, setSaveSuccess]   = useState(false);
 
-  // Fetch categories based on active transaction type
+  // Fetch categories filtered by active type
   const categories = useLiveQuery(
     () => db.categories.where('type').equals(type).toArray(),
     [type]
   );
 
+  /* ── Handlers ──────────────────────────────────────── */
+  const handleTypeSwitch = useCallback((newType: TransactionType) => {
+    setType(newType);
+    setCategoryId(''); // reset category when switching type
+  }, []);
+
   const handleAmountChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const rawVal = e.target.value;
-    const numericVal = parseRawAmount(rawVal);
-    if (numericVal === 0) {
-      setDisplayAmount('');
-    } else {
-      setDisplayAmount(formatNumber(numericVal));
-    }
+    const raw = parseRawAmount(e.target.value);
+    setDisplayAmount(raw > 0 ? formatNumber(raw) : '');
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    const numericAmount = parseRawAmount(displayAmount);
-
-    if (numericAmount <= 0) {
-      alert('Nominal harus lebih dari Rp 0');
-      return;
-    }
-
-    if (!categoryId && categories && categories.length > 0) {
-      alert('Pilih salah satu kategori');
-      return;
-    }
-
-    const selectedCategory = categoryId || (categories && categories[0]?.id) || 'lain_pengeluaran';
+    const amount = parseRawAmount(displayAmount);
+    if (!amount || amount <= 0 || !categoryId) return;
 
     setIsSubmitting(true);
     try {
       await db.transactions.add({
-        amount: numericAmount,
+        amount,
         type,
-        categoryId: selectedCategory,
+        categoryId,
         date,
-        note: note.trim(),
+        note: note.trim() || undefined,
         createdAt: new Date().toISOString(),
       });
 
-      // Reset form
-      setDisplayAmount('');
-      setNote('');
-      setCategoryId('');
-      onClose();
+      // Brief success flash before closing
+      setSaveSuccess(true);
+      setTimeout(() => {
+        setSaveSuccess(false);
+        resetForm();
+        onClose();
+      }, 600);
     } catch (err) {
-      console.error('Failed to add transaction:', err);
+      console.error('Error saving transaction:', err);
     } finally {
       setIsSubmitting(false);
     }
   };
 
+  const resetForm = () => {
+    setDisplayAmount('');
+    setCategoryId('');
+    setNote('');
+    setDate(getCurrentDateISO());
+    setType(defaultType);
+  };
+
+  const handleClose = () => {
+    resetForm();
+    onClose();
+  };
+
+  const isExpense = type === 'expense';
+
   return (
-    <Modal isOpen={isOpen} onClose={onClose} title="Tambah Transaksi">
-      <form onSubmit={handleSubmit} className="space-y-4">
-        {/* Type Toggle Tabs */}
-        <div className="grid grid-cols-2 gap-2 bg-slate-100 p-1 rounded-2xl">
-          <button
-            type="button"
-            onClick={() => {
-              setType('expense');
-              setCategoryId('');
-            }}
-            className={`flex items-center justify-center gap-2 py-2.5 rounded-xl font-bold text-sm transition-all ${
-              type === 'expense'
-                ? 'bg-rose-500 text-white shadow-xs'
-                : 'text-slate-500 hover:text-slate-800'
-            }`}
-          >
-            <MinusCircle size={18} />
-            Pengeluaran
-          </button>
-          <button
-            type="button"
-            onClick={() => {
-              setType('income');
-              setCategoryId('');
-            }}
-            className={`flex items-center justify-center gap-2 py-2.5 rounded-xl font-bold text-sm transition-all ${
-              type === 'income'
-                ? 'bg-emerald-600 text-white shadow-xs'
-                : 'text-slate-500 hover:text-slate-800'
-            }`}
-          >
-            <PlusCircle size={18} />
-            Pemasukan
-          </button>
+    <Modal
+      isOpen={isOpen}
+      onClose={handleClose}
+      title="Tambah Transaksi"
+    >
+      <form onSubmit={handleSubmit} className="space-y-5">
+
+        {/* ── Type Switcher (Expense / Income) ─────────── */}
+        <div
+          className="grid grid-cols-2 gap-1.5 bg-slate-100 p-1 rounded-2xl"
+          role="group"
+          aria-label="Jenis transaksi"
+        >
+          <TypeTab
+            id="type-expense"
+            active={isExpense}
+            label="Pengeluaran"
+            icon={<MinusCircle size={16} className={isExpense ? 'text-rose-500' : 'text-slate-400'} />}
+            activeClass="text-rose-700"
+            onClick={() => handleTypeSwitch('expense')}
+          />
+          <TypeTab
+            id="type-income"
+            active={!isExpense}
+            label="Pemasukan"
+            icon={<PlusCircle size={16} className={!isExpense ? 'text-emerald-500' : 'text-slate-400'} />}
+            activeClass="text-emerald-700"
+            onClick={() => handleTypeSwitch('income')}
+          />
         </div>
 
-        {/* Large Amount Input */}
+        {/* ── Amount Input ───────────────────────────────── */}
         <div>
-          <label className="block text-xs font-semibold text-slate-500 mb-1">Nominal (Rp)</label>
-          <div className="relative flex items-center">
-            <span className="absolute left-4 text-xl font-extrabold text-slate-400">Rp</span>
+          <label
+            htmlFor="amount-input"
+            className="block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-1.5"
+          >
+            Nominal
+          </label>
+          <div className="relative">
+            <span className="absolute left-3.5 top-1/2 -translate-y-1/2 text-base font-bold text-slate-400 select-none">
+              Rp
+            </span>
             <input
+              id="amount-input"
               type="text"
               inputMode="numeric"
               value={displayAmount}
               onChange={handleAmountChange}
               placeholder="0"
+              required
               autoFocus
-              className="w-full pl-12 pr-4 py-3 text-2xl font-extrabold text-slate-800 bg-slate-50 border border-slate-200 rounded-2xl focus:outline-hidden focus:ring-2 focus:ring-rose-500/50 focus:bg-white transition-all"
+              className={cn(
+                'w-full pl-10 pr-4 py-3.5 rounded-xl text-xl font-bold tracking-tight',
+                'bg-slate-50 border border-slate-200 text-slate-800',
+                'focus:outline-none focus:ring-2 focus:ring-rose-400 focus:bg-white focus:border-rose-300',
+                'transition-all duration-200',
+                'placeholder:text-slate-300',
+              )}
             />
           </div>
         </div>
 
-        {/* Category Grid Selector */}
+        {/* ── Category Grid ──────────────────────────────── */}
         <div>
-          <label className="block text-xs font-semibold text-slate-500 mb-1.5">Pilih Kategori</label>
-          <div className="grid grid-cols-4 gap-2 max-h-48 overflow-y-auto p-1">
-            {categories?.map((cat) => {
-              const isSelected = categoryId === cat.id;
-              return (
-                <button
-                  key={cat.id}
-                  type="button"
-                  onClick={() => setCategoryId(cat.id)}
-                  className={`flex flex-col items-center justify-center p-2.5 rounded-2xl border transition-all ${
-                    isSelected
-                      ? 'bg-rose-50 border-rose-500 text-rose-700 font-bold scale-105 shadow-xs'
-                      : 'bg-white border-slate-100 text-slate-600 hover:border-slate-300'
-                  }`}
-                >
-                  <div
-                    className="w-9 h-9 rounded-xl flex items-center justify-center mb-1 text-white shadow-xs"
-                    style={{ backgroundColor: cat.color }}
+          <label className="block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-2">
+            Kategori
+          </label>
+
+          {(!categories || categories.length === 0) ? (
+            <div className="py-6 text-center text-xs text-slate-400">
+              Memuat kategori...
+            </div>
+          ) : (
+            <div className="grid grid-cols-4 gap-2 max-h-44 overflow-y-auto scrollbar-none pb-0.5">
+              {categories.map((cat: Category) => {
+                const selected = categoryId === cat.id;
+                return (
+                  <button
+                    key={cat.id}
+                    type="button"
+                    id={`cat-${cat.id}`}
+                    onClick={() => setCategoryId(cat.id)}
+                    aria-pressed={selected}
+                    className={cn(
+                      'flex flex-col items-center justify-center gap-1 p-2 rounded-2xl border',
+                      'transition-all duration-150 tap-feedback',
+                      selected
+                        ? 'border-rose-400 bg-rose-50 shadow-sm scale-[1.04]'
+                        : 'border-slate-100 bg-white hover:border-slate-200',
+                    )}
                   >
-                    <CategoryIcon name={cat.icon} size={18} />
-                  </div>
-                  <span className="text-[10px] text-center line-clamp-1">{cat.name}</span>
-                </button>
-              );
-            })}
-          </div>
+                    {/* Icon badge */}
+                    <div
+                      className="w-9 h-9 rounded-xl flex items-center justify-center text-white shadow-xs"
+                      style={{ backgroundColor: cat.color }}
+                    >
+                      <CategoryIcon name={cat.icon} size={17} />
+                    </div>
+                    <span
+                      className={cn(
+                        'text-[10px] text-center leading-tight line-clamp-1',
+                        selected ? 'font-bold text-rose-700' : 'text-slate-500',
+                      )}
+                    >
+                      {cat.name}
+                    </span>
+                  </button>
+                );
+              })}
+            </div>
+          )}
         </div>
 
-        {/* Date Selector */}
+        {/* ── Date Picker ────────────────────────────────── */}
         <div>
-          <label className="block text-xs font-semibold text-slate-500 mb-1">Tanggal</label>
+          <label
+            htmlFor="date-input"
+            className="block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-1.5"
+          >
+            <span className="flex items-center gap-1.5">
+              <CalendarDays size={12} /> Tanggal
+            </span>
+          </label>
           <input
+            id="date-input"
             type="date"
             value={date}
             onChange={(e) => setDate(e.target.value)}
-            className="w-full px-3 py-2 text-sm bg-slate-50 border border-slate-200 rounded-xl focus:outline-hidden focus:ring-2 focus:ring-rose-500/50"
+            max={getCurrentDateISO()}
+            className={cn(
+              'w-full px-3.5 py-2.5 rounded-xl text-sm font-medium',
+              'bg-slate-50 border border-slate-200 text-slate-700',
+              'focus:outline-none focus:ring-2 focus:ring-rose-400 focus:bg-white',
+              'transition-all duration-200',
+            )}
           />
         </div>
 
-        {/* Optional Note */}
+        {/* ── Note Input (Optional) ─────────────────────── */}
         <div>
-          <label className="block text-xs font-semibold text-slate-500 mb-1">Catatan (Opsional)</label>
+          <label
+            htmlFor="note-input"
+            className="block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-1.5"
+          >
+            <span className="flex items-center gap-1.5">
+              <StickyNote size={12} /> Catatan
+              <span className="text-slate-300 font-normal normal-case">(opsional)</span>
+            </span>
+          </label>
           <input
+            id="note-input"
             type="text"
             value={note}
             onChange={(e) => setNote(e.target.value)}
-            placeholder="Misal: Nasi goreng sepi manis"
-            className="w-full px-3 py-2 text-sm bg-slate-50 border border-slate-200 rounded-xl focus:outline-hidden focus:ring-2 focus:ring-rose-500/50"
+            placeholder="Misal: Nasi goreng kampus…"
+            maxLength={80}
+            className={cn(
+              'w-full px-3.5 py-2.5 rounded-xl text-sm',
+              'bg-slate-50 border border-slate-200 text-slate-700 placeholder:text-slate-300',
+              'focus:outline-none focus:ring-2 focus:ring-rose-400 focus:bg-white',
+              'transition-all duration-200',
+            )}
           />
         </div>
 
-        {/* Submit CTA */}
+        {/* ── Submit Button ──────────────────────────────── */}
         <Button
+          id="btn-save-transaction"
           type="submit"
-          variant={type === 'expense' ? 'primary' : 'secondary'}
-          fullWidth
+          variant={isExpense ? 'primary' : 'primary'}
           size="lg"
-          disabled={isSubmitting}
-          className="mt-2"
+          fullWidth
+          isLoading={isSubmitting}
+          disabled={!categoryId || !displayAmount || isSubmitting}
+          className={cn(
+            'mt-1',
+            !isExpense && 'bg-emerald-500 hover:bg-emerald-600 shadow-emerald-200/60',
+            saveSuccess && 'bg-emerald-500',
+          )}
         >
-          {isSubmitting ? 'Menyimpan...' : 'Simpan Transaksi'}
+          {saveSuccess ? (
+            <span className="flex items-center gap-2">
+              <CheckCircle2 size={18} />
+              Tersimpan!
+            </span>
+          ) : (
+            `Simpan ${isExpense ? 'Pengeluaran' : 'Pemasukan'}`
+          )}
         </Button>
+
       </form>
     </Modal>
   );
 };
+
+/* ── Internal TypeTab sub-component ──────────────────────────────── */
+interface TypeTabProps {
+  id: string;
+  active: boolean;
+  label: string;
+  icon: React.ReactNode;
+  activeClass: string;
+  onClick: () => void;
+}
+
+const TypeTab: React.FC<TypeTabProps> = ({ id, active, label, icon, activeClass, onClick }) => (
+  <button
+    id={id}
+    type="button"
+    role="radio"
+    aria-checked={active}
+    onClick={onClick}
+    className={cn(
+      'flex items-center justify-center gap-2 py-2.5 rounded-xl text-sm font-medium',
+      'transition-all duration-200 tap-feedback',
+      active
+        ? `bg-white shadow-sm font-semibold ${activeClass}`
+        : 'text-slate-500 hover:text-slate-700',
+    )}
+  >
+    {icon}
+    {label}
+  </button>
+);

@@ -9,6 +9,7 @@ import { CategoryIcon } from '../components/common/CategoryIcon';
 import { formatRupiah, formatNumber, parseRawAmount } from '../utils/currency';
 import { getCurrentMonthYear, formatMonthReadable } from '../utils/date';
 import { Edit3, Plus, PieChart as PieChartIcon } from 'lucide-react';
+import { Transaction, Category, Budget } from '../types';
 
 export const BudgetPage: React.FC = () => {
   const currentMonth = getCurrentMonthYear();
@@ -31,7 +32,7 @@ export const BudgetPage: React.FC = () => {
   // Map category spent for current month
   const categorySpentMap = useMemo(() => {
     const map = new Map<string, number>();
-    transactions?.forEach((tx) => {
+    transactions?.forEach((tx: Transaction) => {
       if (tx.date.startsWith(currentMonth)) {
         map.set(tx.categoryId, (map.get(tx.categoryId) || 0) + tx.amount);
       }
@@ -42,7 +43,7 @@ export const BudgetPage: React.FC = () => {
   // Map budget limits
   const budgetMap = useMemo(() => {
     const map = new Map<string, { id?: number; amountLimit: number }>();
-    budgets?.forEach((b) => map.set(b.categoryId, { id: b.id, amountLimit: b.amountLimit }));
+    budgets?.forEach((b: Budget) => map.set(b.categoryId, { id: b.id, amountLimit: b.amountLimit }));
     return map;
   }, [budgets]);
 
@@ -51,7 +52,7 @@ export const BudgetPage: React.FC = () => {
     let totalLimit = 0;
     let totalSpent = 0;
 
-    expenseCategories?.forEach((cat) => {
+    expenseCategories?.forEach((cat: Category) => {
       const budget = budgetMap.get(cat.id);
       if (budget) {
         totalLimit += budget.amountLimit;
@@ -128,7 +129,7 @@ export const BudgetPage: React.FC = () => {
           Budget per Kategori
         </h3>
 
-        {expenseCategories?.map((cat) => {
+        {expenseCategories?.map((cat: Category) => {
           const budget = budgetMap.get(cat.id);
           const limit = budget?.amountLimit || 0;
           const spent = categorySpentMap.get(cat.id) || 0;
