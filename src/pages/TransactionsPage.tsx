@@ -102,30 +102,14 @@ export const TransactionsPage: React.FC = () => {
           />
         </div>
 
-        <div className="flex items-center gap-1.5">
-          <div className="relative">
-            <input
-              type="month"
-              value={selectedMonth}
-              onChange={(e) => setSelectedMonth(e.target.value)}
-              className="appearance-none py-2.5 pl-3 pr-8 bg-white border border-slate-200 rounded-xl text-xs font-semibold text-slate-700 focus:outline-none focus:ring-2 focus:ring-rose-400"
-            />
-            <ChevronDown size={14} className="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" />
-          </div>
-
-          {selectedMonth ? (
-            <button
-              onClick={() => setSelectedMonth('')}
-              className="px-2.5 py-2.5 bg-rose-50 text-rose-600 border border-rose-200 rounded-xl text-xs font-bold hover:bg-rose-100 transition-colors whitespace-nowrap"
-              title="Tampilkan Semua Riwayat"
-            >
-              Semua
-            </button>
-          ) : (
-            <span className="px-2.5 py-2 bg-slate-100 text-slate-600 rounded-xl text-xs font-bold whitespace-nowrap">
-              Semua Riwayat
-            </span>
-          )}
+        <div className="relative">
+          <input
+            type="month"
+            value={selectedMonth}
+            onChange={(e) => setSelectedMonth(e.target.value)}
+            className="appearance-none py-2.5 pl-3 pr-8 bg-white border border-slate-200 rounded-xl text-xs font-semibold text-slate-700 focus:outline-none focus:ring-2 focus:ring-rose-400"
+          />
+          <ChevronDown size={14} className="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" />
         </div>
       </div>
 
