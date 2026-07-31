@@ -2,25 +2,174 @@
 @tailwind components;
 @tailwind utilities;
 
+/* ═══════════════════════════════════════════════════════
+   BASE — Reset & Global Typography
+   ═══════════════════════════════════════════════════════ */
 @layer base {
+  *,
+  *::before,
+  *::after {
+    box-sizing: border-box;
+  }
+
+  html {
+    /* Smooth scrolling & prevent layout shifts */
+    scroll-behavior: smooth;
+    text-size-adjust: 100%;
+    -webkit-text-size-adjust: 100%;
+  }
+
   body {
-    @apply bg-slate-50 text-slate-800 font-sans min-h-screen antialiased pb-24;
+    @apply bg-slate-50 text-slate-800 font-sans antialiased;
+    /* Reserve space for iOS home indicator */
+    padding-bottom: env(safe-area-inset-bottom, 1.5rem);
+    /* Prevent blue flash on tap (mobile) */
     -webkit-tap-highlight-color: transparent;
+    /* Prevent overscroll bounce on iOS */
+    overscroll-behavior: none;
+  }
+
+  /* Consistent input appearance across browsers */
+  input,
+  textarea,
+  select {
+    @apply font-sans;
+    -webkit-appearance: none;
+    appearance: none;
+  }
+
+  /* Remove default outline for mouse users, keep for keyboard */
+  :focus-visible {
+    @apply outline-2 outline-offset-2 outline-rose-500;
   }
 }
 
-/* Custom scrollbar hiding for clean mobile swipe UI */
-.no-scrollbar::-webkit-scrollbar {
-  display: none;
-}
-.no-scrollbar {
-  -ms-overflow-style: none;
-  scrollbar-width: none;
+/* ═══════════════════════════════════════════════════════
+   COMPONENTS — Reusable CSS abstractions
+   ═══════════════════════════════════════════════════════ */
+@layer components {
+  /* ── Card Base ──────────────────────────────────────── */
+  .card-base {
+    @apply bg-white border border-slate-100 rounded-2xl p-4 shadow-card;
+  }
+
+  /* ── Button Base ────────────────────────────────────── */
+  .btn-primary {
+    @apply bg-rose-500 text-white font-semibold rounded-xl px-5 py-3
+           hover:bg-rose-700 active:scale-95 transition-all duration-150
+           disabled:opacity-50 disabled:pointer-events-none;
+  }
+
+  .btn-ghost {
+    @apply text-rose-700 font-semibold rounded-xl px-4 py-2
+           hover:bg-rose-50 active:scale-95 transition-all duration-150;
+  }
+
+  /* ── Input Base ─────────────────────────────────────── */
+  .input-base {
+    @apply w-full bg-slate-50 border border-slate-200 rounded-xl
+           px-3.5 py-2.5 text-sm text-slate-800 font-medium
+           focus:outline-none focus:ring-2 focus:ring-rose-400 focus:bg-white
+           transition-all duration-200 placeholder:text-slate-400;
+  }
+
+  /* ── Badge ──────────────────────────────────────────── */
+  .badge {
+    @apply inline-flex items-center px-2.5 py-0.5 rounded-full text-[11px] font-semibold;
+  }
+
+  .badge-income {
+    @apply badge bg-emerald-100 text-emerald-700;
+  }
+
+  .badge-expense {
+    @apply badge bg-rose-100 text-rose-700;
+  }
 }
 
-/* Glassmorphism utility */
-.glass-effect {
-  background: rgba(255, 255, 255, 0.85);
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
+/* ═══════════════════════════════════════════════════════
+   UTILITIES — Custom single-purpose helpers
+   ═══════════════════════════════════════════════════════ */
+@layer utilities {
+  /* ── Scrollbar hiding (mobile swipe UI) ────────────── */
+  .no-scrollbar::-webkit-scrollbar,
+  .scrollbar-none::-webkit-scrollbar {
+    display: none;
+  }
+
+  .no-scrollbar,
+  .scrollbar-none {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+
+  /* ── Glassmorphism ──────────────────────────────────── */
+  .glass {
+    background: rgba(255, 255, 255, 0.85);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+  }
+
+  .glass-dark {
+    background: rgba(0, 0, 0, 0.45);
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+  }
+
+  /* ── Safe area padding untuk iPhone notch/nav bar ──── */
+  .safe-bottom {
+    padding-bottom: max(env(safe-area-inset-bottom, 0px), 1rem);
+  }
+
+  /* ── Text gradient ──────────────────────────────────── */
+  .text-gradient-rose {
+    background: linear-gradient(135deg, #C96068 0%, #AB4543 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+
+  /* ── Rose gradient background ───────────────────────── */
+  .bg-rose-gradient {
+    background: linear-gradient(145deg, #C96068 0%, #9B4443 100%);
+  }
+
+  /* ── Skeleton loading animation ─────────────────────── */
+  .skeleton {
+    @apply bg-slate-200 rounded-lg overflow-hidden relative;
+  }
+
+  .skeleton::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    transform: translateX(-100%);
+    background: linear-gradient(
+      90deg,
+      transparent 0%,
+      rgba(255, 255, 255, 0.6) 50%,
+      transparent 100%
+    );
+    animation: shimmer 1.5s infinite;
+  }
+
+  /* ── Tap feedback helper ────────────────────────────── */
+  .tap-feedback {
+    @apply active:scale-95 transition-transform duration-100;
+  }
+
+  /* ── Line clamp utilities ───────────────────────────── */
+  .line-clamp-1 {
+    overflow: hidden;
+    display: -webkit-box;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 1;
+  }
+
+  .line-clamp-2 {
+    overflow: hidden;
+    display: -webkit-box;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 2;
+  }
 }
