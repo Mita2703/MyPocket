@@ -31,3 +31,23 @@ export interface DashboardSummary {
   totalExpense: number;
   balance: number;
 }
+
+/** A savings target (e.g. "Beli Laptop", "Liburan Bali") */
+export interface SavingGoal {
+  id?: number;
+  name: string;          // e.g. "Laptop Gaming"
+  targetAmount: number;  // Nominal yang ingin dicapai
+  targetDate?: string;   // YYYY-MM-DD, opsional
+  emoji: string;         // Emoji ikon (e.g. "💻")
+  createdAt: string;
+}
+
+/** A single top-up entry for a saving goal */
+export interface SavingEntry {
+  id?: number;
+  goalId: number;        // FK → SavingGoal.id
+  amount: number;        // Nominal yang ditabung
+  note?: string;
+  date: string;          // YYYY-MM-DD
+  createdAt: string;
+}

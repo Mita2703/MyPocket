@@ -6,6 +6,7 @@ import { DashboardPage } from './pages/DashboardPage';
 import { TransactionsPage } from './pages/TransactionsPage';
 import { BudgetPage } from './pages/BudgetPage';
 import { SettingsPage } from './pages/SettingsPage';
+import { SavingsPage } from './pages/SavingsPage';
 import { ensureSeedData } from './db/database';
 
 export function App() {
@@ -31,8 +32,9 @@ export function App() {
           />
         )}
         {activeTab === 'transactions' && <TransactionsPage />}
-        {activeTab === 'budget' && <BudgetPage />}
-        {activeTab === 'settings' && <SettingsPage />}
+        {activeTab === 'budget'       && <BudgetPage />}
+        {activeTab === 'savings'      && <SavingsPage />}
+        {activeTab === 'settings'     && <SettingsPage />}
       </main>
 
       {/* Quick Add Transaction Modal */}

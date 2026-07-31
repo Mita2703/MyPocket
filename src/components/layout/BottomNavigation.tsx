@@ -1,8 +1,8 @@
 import React from 'react';
-import { LayoutDashboard, Receipt, PieChart, Settings, Plus } from 'lucide-react';
+import { LayoutDashboard, Receipt, PieChart, Settings, Plus, PiggyBank } from 'lucide-react';
 import { cn } from '../../utils/cn';
 
-export type ActiveTab = 'dashboard' | 'transactions' | 'budget' | 'settings';
+export type ActiveTab = 'dashboard' | 'transactions' | 'budget' | 'settings' | 'savings';
 
 interface NavItem {
   id: ActiveTab;
@@ -16,11 +16,17 @@ interface BottomNavigationProps {
   onOpenAddModal: () => void;
 }
 
-const NAV_ITEMS: NavItem[] = [
-  { id: 'dashboard',    label: 'Beranda',    icon: LayoutDashboard },
-  { id: 'transactions', label: 'Transaksi',  icon: Receipt },
-  { id: 'budget',       label: 'Anggaran',   icon: PieChart },
-  { id: 'settings',     label: 'Pengaturan', icon: Settings },
+/** Left 2 tabs: Beranda, Transaksi */
+const LEFT_ITEMS: NavItem[] = [
+  { id: 'dashboard',    label: 'Beranda',   icon: LayoutDashboard },
+  { id: 'transactions', label: 'Transaksi', icon: Receipt },
+];
+
+/** Right 3 tabs: Tabungan, Anggaran, Pengaturan */
+const RIGHT_ITEMS: NavItem[] = [
+  { id: 'savings',  label: 'Tabungan',   icon: PiggyBank },
+  { id: 'budget',   label: 'Anggaran',   icon: PieChart },
+  { id: 'settings', label: 'Pengaturan', icon: Settings },
 ];
 
 export const BottomNavigation: React.FC<BottomNavigationProps> = ({
@@ -33,15 +39,14 @@ export const BottomNavigation: React.FC<BottomNavigationProps> = ({
       className={cn(
         'fixed bottom-0 left-0 right-0 z-40',
         'glass border-t border-slate-100/80',
-        'px-2 pt-1.5 pb-safe',
-        // Ensure nav is always above FAB shadow
+        'px-1 pt-1.5 pb-safe',
         'shadow-[0_-1px_16px_rgba(0,0,0,0.06)]',
       )}
       aria-label="Navigasi utama"
     >
       <div className="max-w-md mx-auto flex items-center justify-around relative">
         {/* ── Left 2 tab items ─────────────────────────────────── */}
-        {NAV_ITEMS.slice(0, 2).map((item) => (
+        {LEFT_ITEMS.map((item) => (
           <NavButton
             key={item.id}
             item={item}
@@ -62,10 +67,8 @@ export const BottomNavigation: React.FC<BottomNavigationProps> = ({
               'flex items-center justify-center',
               'shadow-fab',
               'border-4 border-slate-50',
-              // Micro-interactions
               'active:scale-90 hover:scale-105',
               'transition-transform duration-150',
-              // Subtle pulse ring to draw attention
               'ring-2 ring-rose-200 ring-offset-2 ring-offset-slate-50',
             )}
           >
@@ -73,8 +76,8 @@ export const BottomNavigation: React.FC<BottomNavigationProps> = ({
           </button>
         </div>
 
-        {/* ── Right 2 tab items ────────────────────────────────── */}
-        {NAV_ITEMS.slice(2, 4).map((item) => (
+        {/* ── Right 3 tab items ────────────────────────────────── */}
+        {RIGHT_ITEMS.map((item) => (
           <NavButton
             key={item.id}
             item={item}
@@ -104,7 +107,7 @@ const NavButton: React.FC<NavButtonProps> = ({ item, isActive, onClick }) => {
       aria-label={item.label}
       aria-current={isActive ? 'page' : undefined}
       className={cn(
-        'flex flex-col items-center gap-0.5 py-1.5 px-3.5 rounded-xl',
+        'flex flex-col items-center gap-0.5 py-1.5 px-2.5 rounded-xl',
         'transition-all duration-200 select-none',
         'tap-feedback',
         isActive
@@ -120,7 +123,7 @@ const NavButton: React.FC<NavButtonProps> = ({ item, isActive, onClick }) => {
         )}
       >
         <Icon
-          size={20}
+          size={18}
           strokeWidth={isActive ? 2.2 : 1.8}
           className={cn(isActive && 'text-rose-600')}
         />
@@ -129,7 +132,7 @@ const NavButton: React.FC<NavButtonProps> = ({ item, isActive, onClick }) => {
       {/* Label */}
       <span
         className={cn(
-          'text-[10px] font-medium leading-none transition-all',
+          'text-[9px] font-medium leading-none transition-all',
           isActive && 'font-bold text-rose-600',
         )}
       >

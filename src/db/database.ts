@@ -1,24 +1,37 @@
 import Dexie, { Table } from 'dexie';
-import { Transaction, Category, Budget } from '../types';
+import { Transaction, Category, Budget, SavingGoal, SavingEntry } from '../types';
 import { DEFAULT_CATEGORIES } from './defaultCategories';
 
 export class MyPocketDatabase extends Dexie {
   transactions!: Table<Transaction>;
   categories!: Table<Category>;
   budgets!: Table<Budget>;
+  savingGoals!: Table<SavingGoal>;
+  savingEntries!: Table<SavingEntry>;
 
   constructor() {
     super('MyPocketDB');
+
+    // v1 — original schema
     this.version(1).stores({
       transactions: '++id, date, type, categoryId, [date+type]',
       categories: 'id, type, name',
       budgets: '++id, categoryId, monthYear, [categoryId+monthYear]',
     });
 
+    // v2 — adds saving goals & entries
+    this.version(2).stores({
+      transactions: '++id, date, type, categoryId, [date+type]',
+      categories: 'id, type, name',
+      budgets: '++id, categoryId, monthYear, [categoryId+monthYear]',
+      savingGoals: '++id, createdAt',
+      savingEntries: '++id, goalId, date',
+    });
+
     // Populate initial categories if empty
     this.on('populate', async () => {
       await this.categories.bulkAdd(DEFAULT_CATEGORIES);
-      
+
       // Add sample initial budgets for the current month
       const currentMonth = new Date().toISOString().slice(0, 7); // YYYY-MM
       await this.budgets.bulkAdd([
