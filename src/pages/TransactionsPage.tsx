@@ -7,7 +7,7 @@ import { Card } from '../components/common/Card';
 import { ConfirmModal } from '../components/common/ConfirmModal';
 import { CategoryIcon } from '../components/common/CategoryIcon';
 import { formatRupiah } from '../utils/currency';
-import { formatDateReadable, getCurrentMonthYear } from '../utils/date';
+import { formatDateReadable, formatMonthReadable, getCurrentMonthYear } from '../utils/date';
 import { cn } from '../utils/cn';
 import { Transaction, TransactionType, Category } from '../types';
 
@@ -31,6 +31,22 @@ export const TransactionsPage: React.FC = () => {
     categories?.forEach((c: Category) => map.set(c.id, { name: c.name, icon: c.icon, color: c.color }));
     return map;
   }, [categories]);
+
+  // ── Available Months Options (Top option: "Semua Riwayat") ────
+  const monthOptions = useMemo(() => {
+    const monthsSet = new Set<string>();
+    monthsSet.add(getCurrentMonthYear());
+
+    transactions?.forEach((tx: Transaction) => {
+      if (tx.date) monthsSet.add(tx.date.slice(0, 7));
+    });
+
+    const sorted = Array.from(monthsSet).sort().reverse();
+    return sorted.map((m) => ({
+      value: m,
+      label: formatMonthReadable(m),
+    }));
+  }, [transactions]);
 
   // ── Filtered transactions ────────────────────────────────────
   const filteredTransactions = useMemo(() => {
@@ -89,7 +105,7 @@ export const TransactionsPage: React.FC = () => {
   return (
     <div className="flex flex-col gap-3 px-4 pt-3 pb-6">
 
-      {/* ── Search Bar + Month Picker ─────────────────────── */}
+      {/* ── Search Bar + Month Dropdown ───────────────────── */}
       <div className="flex gap-2">
         <div className="relative flex-1">
           <Search size={15} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" />
@@ -102,13 +118,20 @@ export const TransactionsPage: React.FC = () => {
           />
         </div>
 
+        {/* ── Month Select Dropdown with "Semua Riwayat" option at the top ── */}
         <div className="relative">
-          <input
-            type="month"
+          <select
             value={selectedMonth}
             onChange={(e) => setSelectedMonth(e.target.value)}
-            className="appearance-none py-2.5 pl-3 pr-8 bg-white border border-slate-200 rounded-xl text-xs font-semibold text-slate-700 focus:outline-none focus:ring-2 focus:ring-rose-400"
-          />
+            className="appearance-none py-2.5 pl-3 pr-8 bg-white border border-slate-200 rounded-xl text-xs font-semibold text-slate-700 focus:outline-none focus:ring-2 focus:ring-rose-400 cursor-pointer"
+          >
+            <option value="">Semua Riwayat</option>
+            {monthOptions.map((m) => (
+              <option key={m.value} value={m.value}>
+                {m.label}
+              </option>
+            ))}
+          </select>
           <ChevronDown size={14} className="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" />
         </div>
       </div>
