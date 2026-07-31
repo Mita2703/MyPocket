@@ -2,7 +2,7 @@ import React from 'react';
 import { LayoutDashboard, Receipt, PieChart, Settings, Plus, PiggyBank } from 'lucide-react';
 import { cn } from '../../utils/cn';
 
-export type ActiveTab = 'dashboard' | 'transactions' | 'budget' | 'settings' | 'savings';
+export type ActiveTab = 'dashboard' | 'transactions' | 'settings' | 'savings';
 
 interface NavItem {
   id: ActiveTab;
@@ -22,10 +22,9 @@ const LEFT_ITEMS: NavItem[] = [
   { id: 'transactions', label: 'Transaksi', icon: Receipt },
 ];
 
-/** Right 3 tabs: Tabungan, Anggaran, Pengaturan */
+/** Right 2 tabs: Tabungan, Pengaturan */
 const RIGHT_ITEMS: NavItem[] = [
   { id: 'savings',  label: 'Tabungan',   icon: PiggyBank },
-  { id: 'budget',   label: 'Anggaran',   icon: PieChart },
   { id: 'settings', label: 'Pengaturan', icon: Settings },
 ];
 
@@ -107,7 +106,7 @@ const NavButton: React.FC<NavButtonProps> = ({ item, isActive, onClick }) => {
       aria-label={item.label}
       aria-current={isActive ? 'page' : undefined}
       className={cn(
-        'flex flex-col items-center gap-0.5 py-1.5 px-2.5 rounded-xl',
+        'flex flex-col items-center gap-0.5 py-1.5 px-3.5 rounded-xl',
         'transition-all duration-200 select-none',
         'tap-feedback',
         isActive
@@ -123,7 +122,7 @@ const NavButton: React.FC<NavButtonProps> = ({ item, isActive, onClick }) => {
         )}
       >
         <Icon
-          size={18}
+          size={20}
           strokeWidth={isActive ? 2.2 : 1.8}
           className={cn(isActive && 'text-rose-600')}
         />
@@ -132,7 +131,7 @@ const NavButton: React.FC<NavButtonProps> = ({ item, isActive, onClick }) => {
       {/* Label */}
       <span
         className={cn(
-          'text-[9px] font-medium leading-none transition-all',
+          'text-[10px] font-medium leading-none transition-all',
           isActive && 'font-bold text-rose-600',
         )}
       >

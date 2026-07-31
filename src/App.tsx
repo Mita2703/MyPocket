@@ -4,7 +4,6 @@ import { BottomNavigation, ActiveTab } from './components/layout/BottomNavigatio
 import { TransactionFormModal } from './components/transactions/TransactionFormModal';
 import { DashboardPage } from './pages/DashboardPage';
 import { TransactionsPage } from './pages/TransactionsPage';
-import { BudgetPage } from './pages/BudgetPage';
 import { SettingsPage } from './pages/SettingsPage';
 import { SavingsPage } from './pages/SavingsPage';
 import { ensureSeedData } from './db/database';
@@ -28,11 +27,9 @@ export function App() {
         {activeTab === 'dashboard' && (
           <DashboardPage
             onNavigateToTransactions={() => setActiveTab('transactions')}
-            onNavigateToBudget={() => setActiveTab('budget')}
           />
         )}
         {activeTab === 'transactions' && <TransactionsPage />}
-        {activeTab === 'budget'       && <BudgetPage />}
         {activeTab === 'savings'      && <SavingsPage />}
         {activeTab === 'settings'     && <SettingsPage />}
       </main>

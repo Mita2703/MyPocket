@@ -7,28 +7,35 @@ import {
 import {
   TrendingDown, TrendingUp, AlertCircle, ChevronRight,
   PieChart as PieChartIcon, BarChart3, ArrowUpRight, Wallet,
+  Plus, Edit3, CheckCircle2,
 } from 'lucide-react';
 
 import { db } from '../db/database';
 import { Card } from '../components/common/Card';
+import { Button } from '../components/common/Button';
+import { Modal } from '../components/common/Modal';
 import { CategoryIcon } from '../components/common/CategoryIcon';
 import { ProgressBar } from '../components/common/ProgressBar';
-import { formatRupiah, formatRupiahCompact } from '../utils/currency';
-import { formatDateReadable, formatShortDate, getCurrentMonthYear, getLast7DaysISO } from '../utils/date';
+import { formatRupiah, formatRupiahCompact, formatNumber, parseRawAmount } from '../utils/currency';
+import { formatDateReadable, formatShortDate, getCurrentMonthYear, getLast7DaysISO, formatMonthReadable } from '../utils/date';
 import { cn } from '../utils/cn';
 import { Transaction, Category, Budget } from '../types';
 
 interface DashboardPageProps {
   onNavigateToTransactions: () => void;
-  onNavigateToBudget: () => void;
 }
 
 export const DashboardPage: React.FC<DashboardPageProps> = ({
   onNavigateToTransactions,
-  onNavigateToBudget,
 }) => {
   const currentMonth = getCurrentMonthYear();
   const [chartType, setChartType] = useState<'pie' | 'bar'>('pie');
+
+  // Budget set/edit modal states
+  const [editingCategoryId, setEditingCategoryId] = useState<string | null>(null);
+  const [inputLimit, setInputLimit]               = useState('');
+  const [isSaving, setIsSaving]                   = useState(false);
+  const [saveOk, setSaveOk]                       = useState(false);
 
   // ── Live Queries ─────────────────────────────────────────────
   const transactions = useLiveQuery(() => db.transactions.orderBy('date').reverse().toArray(), []);
@@ -109,6 +116,74 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
       .sort((a, b) => b.pct - a.pct);
   }, [budgets, transactions, categoryMap, currentMonth]);
 
+  // ── Spending per category this month ──
+  const categorySpentMap = useMemo(() => {
+    const map = new Map<string, number>();
+    transactions?.forEach((tx: Transaction) => {
+      if (tx.type === 'expense' && tx.date.startsWith(currentMonth)) {
+        map.set(tx.categoryId, (map.get(tx.categoryId) || 0) + tx.amount);
+      }
+    });
+    return map;
+  }, [transactions, currentMonth]);
+
+  // ── Budget limits map ──
+  const budgetMap = useMemo(() => {
+    const map = new Map<string, { id?: number; amountLimit: number }>();
+    budgets?.forEach((b: Budget) => map.set(b.categoryId, { id: b.id, amountLimit: b.amountLimit }));
+    return map;
+  }, [budgets]);
+
+  // ── Overall budget summary ──
+  const budgetSummary = useMemo(() => {
+    let totalLimit = 0;
+    let totalSpent = 0;
+    const expenseCategories = categories?.filter((c) => c.type === 'expense') || [];
+    expenseCategories.forEach((cat: Category) => {
+      const budget = budgetMap.get(cat.id);
+      if (budget) {
+        totalLimit += budget.amountLimit;
+        totalSpent += categorySpentMap.get(cat.id) || 0;
+      }
+    });
+    const pct = totalLimit > 0 ? (totalSpent / totalLimit) * 100 : 0;
+    return { totalLimit, totalSpent, pct };
+  }, [categories, budgetMap, categorySpentMap]);
+
+  const setBudgetCount = budgetMap.size;
+
+  /* ── Save Budget Handler ── */
+  const handleSaveBudget = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!editingCategoryId) return;
+
+    const numericLimit = parseRawAmount(inputLimit);
+    const existing     = budgetMap.get(editingCategoryId);
+
+    setIsSaving(true);
+    try {
+      if (numericLimit <= 0) {
+        if (existing?.id) await db.budgets.delete(existing.id);
+      } else if (existing?.id) {
+        await db.budgets.update(existing.id, { amountLimit: numericLimit });
+      } else {
+        await db.budgets.add({
+          categoryId: editingCategoryId,
+          amountLimit: numericLimit,
+          monthYear: currentMonth,
+        });
+      }
+      setSaveOk(true);
+      setTimeout(() => {
+        setSaveOk(false);
+        setEditingCategoryId(null);
+        setInputLimit('');
+      }, 700);
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
   const recentTransactions = transactions?.slice(0, 5) || [];
   const isLoading = transactions === undefined;
 
@@ -159,34 +234,105 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
         </div>
       </Card>
 
-      {/* ── Budget Alerts ─────────────────────────────────── */}
-      {budgetAlerts.length > 0 && (
-        <div className="bg-amber-50 border border-amber-200 rounded-2xl p-3.5 space-y-2.5 animate-fade-up">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-2 text-amber-800 font-bold text-xs">
-              <AlertCircle size={15} className="text-amber-500 shrink-0" />
-              <span>Peringatan Budget ({budgetAlerts.length})</span>
-            </div>
-            <button
-              onClick={onNavigateToBudget}
-              className="text-[11px] font-bold text-amber-700 hover:underline flex items-center gap-0.5"
-            >
-              Detail <ChevronRight size={12} />
-            </button>
+      {/* ── Anggaran Bulanan Section ─────────────────────── */}
+      <Card animate>
+        {/* Header */}
+        <div className="flex items-center justify-between mb-3.5">
+          <div className="flex items-center gap-2">
+            <TrendingDown size={16} className="text-rose-500" />
+            <h2 className="text-sm font-bold text-slate-800">Anggaran Bulanan</h2>
           </div>
+          <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">
+            {formatMonthReadable(currentMonth)}
+          </span>
+        </div>
 
-          {budgetAlerts.slice(0, 2).map((alert) => (
-            <div key={alert.categoryId} className="bg-white rounded-xl p-3 shadow-card">
-              <ProgressBar
-                value={alert.pct}
-                label={alert.name}
-                subLabel={`${formatRupiah(alert.spent)} / ${formatRupiah(alert.limit)}`}
-                showPercent
+        {/* Overall Limit Progress (Only if limits are set) */}
+        {budgetSummary.totalLimit > 0 ? (
+          <div className="mb-4 p-3 bg-slate-50 border border-slate-100 rounded-xl">
+            <div className="flex justify-between text-xs font-semibold mb-1.5">
+              <span className="text-slate-500">Total Terpakai</span>
+              <span className="text-slate-700 font-bold">
+                {formatRupiah(budgetSummary.totalSpent)} / {formatRupiah(budgetSummary.totalLimit)}
+              </span>
+            </div>
+            <div className="w-full bg-slate-200/60 rounded-full h-2 overflow-hidden">
+              <div
+                className={cn(
+                  'h-full rounded-full transition-all duration-700',
+                  budgetSummary.pct >= 100 ? 'bg-rose-700 animate-pulse-soft' : 'bg-rose-500',
+                )}
+                style={{ width: `${Math.min(budgetSummary.pct, 100)}%` }}
               />
             </div>
-          ))}
+            <div className="flex justify-between text-[10px] text-slate-400 mt-1 font-medium">
+              <span>Sisa: {formatRupiah(Math.max(0, budgetSummary.totalLimit - budgetSummary.totalSpent))}</span>
+              <span>{Math.round(budgetSummary.pct)}%</span>
+            </div>
+          </div>
+        ) : (
+          <div className="mb-4 p-4 text-center bg-slate-50 border border-dashed border-slate-200 rounded-xl">
+            <p className="text-xs text-slate-500 font-medium">Belum ada budget bulanan yang diatur</p>
+            <p className="text-[10px] text-slate-400 mt-0.5">Atur budget per kategori di bawah ini untuk memantau pengeluaran.</p>
+          </div>
+        )}
+
+        {/* Category Budget List */}
+        <div className="space-y-2.5 max-h-60 overflow-y-auto pr-1">
+          {categories?.filter((c) => c.type === 'expense').map((cat: Category) => {
+            const budget = budgetMap.get(cat.id);
+            const limit  = budget?.amountLimit || 0;
+            const spent  = categorySpentMap.get(cat.id) || 0;
+            const pct    = limit > 0 ? (spent / limit) * 100 : 0;
+            const hasSet = limit > 0;
+
+            return (
+              <div key={cat.id} className="flex flex-col gap-1.5 pb-2.5 border-b border-slate-50 last:border-0 last:pb-0">
+                <div className="flex items-center justify-between gap-2">
+                  <div className="flex items-center gap-2 min-w-0">
+                    <div
+                      className="w-7 h-7 rounded-lg flex items-center justify-center text-white shadow-xs shrink-0"
+                      style={{ backgroundColor: cat.color }}
+                    >
+                      <CategoryIcon name={cat.icon} size={14} />
+                    </div>
+                    <div className="min-w-0">
+                      <p className="text-xs font-bold text-slate-800 truncate">{cat.name}</p>
+                      {hasSet ? (
+                        <p className="text-[9px] text-slate-400">Limit: {formatRupiah(limit)}</p>
+                      ) : (
+                        <p className="text-[9px] text-slate-400 italic">Belum diatur</p>
+                      )}
+                    </div>
+                  </div>
+
+                  <Button
+                    variant={hasSet ? 'ghost' : 'outline'}
+                    size="xs"
+                    onClick={() => {
+                      setEditingCategoryId(cat.id);
+                      setInputLimit(limit ? formatNumber(limit) : '');
+                      setSaveOk(false);
+                    }}
+                    className={cn('h-6 px-2 text-[10px]', hasSet ? 'text-rose-600 hover:bg-rose-50' : 'text-slate-500')}
+                  >
+                    {hasSet ? 'Edit' : 'Atur'}
+                  </Button>
+                </div>
+
+                {hasSet && (
+                  <ProgressBar
+                    value={pct}
+                    subLabel={`${formatRupiah(spent)} terpakai`}
+                    showPercent
+                    animated
+                  />
+                )}
+              </div>
+            );
+          })}
         </div>
-      )}
+      </Card>
 
       {/* ── Analytics Chart ──────────────────────────────── */}
       <Card animate>
@@ -337,6 +483,56 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
           )}
         </div>
       </Card>
+
+      {/* ── Edit Budget Modal ─────────────────────────── */}
+      <Modal
+        isOpen={Boolean(editingCategoryId)}
+        onClose={() => { setEditingCategoryId(null); setInputLimit(''); }}
+        title="Atur Limit Budget"
+        size="sm"
+      >
+        <form onSubmit={handleSaveBudget} className="space-y-4">
+          <div>
+            <label
+              htmlFor="budget-limit-input"
+              className="block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-1.5"
+            >
+              Limit Budget Bulanan (Rp)
+            </label>
+            <div className="relative">
+              <span className="absolute left-3.5 top-1/2 -translate-y-1/2 text-base font-bold text-slate-400 select-none">Rp</span>
+              <input
+                id="budget-limit-input"
+                type="text"
+                inputMode="numeric"
+                value={inputLimit}
+                onChange={(e) => setInputLimit(formatNumber(parseRawAmount(e.target.value)) || '')}
+                placeholder="0"
+                autoFocus
+                className="w-full pl-10 pr-4 py-3.5 text-xl font-bold text-slate-800 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-rose-400 focus:bg-white transition-all placeholder:text-slate-300"
+              />
+            </div>
+            <p className="text-[11px] text-slate-400 mt-1.5 ml-0.5">
+              Isi 0 atau kosongkan untuk menghapus limit budget.
+            </p>
+          </div>
+
+          <Button
+            id="btn-save-budget"
+            type="submit"
+            fullWidth
+            size="lg"
+            isLoading={isSaving}
+            className={cn(saveOk && 'bg-rose-500')}
+          >
+            {saveOk ? (
+              <span className="flex items-center gap-2">
+                <CheckCircle2 size={17} /> Tersimpan!
+              </span>
+            ) : 'Simpan Budget'}
+          </Button>
+        </form>
+      </Modal>
 
     </div>
   );
