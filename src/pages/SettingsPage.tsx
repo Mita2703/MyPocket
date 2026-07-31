@@ -34,10 +34,10 @@ export const SettingsPage: React.FC = () => {
       const catMap = new Map(categories.map((c: Category) => [c.id, c.name]));
 
       let csvContent = 'ID,Tanggal,Tipe,Kategori,Nominal,Catatan\n';
-      transactions.forEach((tx: Transaction) => {
+      transactions.forEach((tx: Transaction, index: number) => {
         const categoryName = catMap.get(tx.categoryId) || tx.categoryId;
         const note = tx.note ? `"${tx.note.replace(/"/g, '""')}"` : '';
-        csvContent += `${tx.id},${tx.date},${tx.type},"${categoryName}",${tx.amount},${note}\n`;
+        csvContent += `${index + 1},${tx.date},${tx.type},"${categoryName}",${tx.amount},${note}\n`;
       });
 
       const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
