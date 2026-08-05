@@ -5,6 +5,9 @@
   "engines": {
     "node": "22.x"
   },
+  "overrides": {
+    "util-deprecate": "file:./scripts/util-deprecate"
+  },
   "scripts": {
     "dev": "vite",
     "build": "tsc && vite build",
