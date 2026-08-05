@@ -2,6 +2,11 @@ import { defineConfig } from 'vite';
 import react from '@vitejs/plugin-react';
 import { VitePWA } from 'vite-plugin-pwa';
 import path from 'path';
+import util from 'util';
+
+if (typeof (util as any).deprecate !== 'function') {
+  (util as any).deprecate = (fn: any) => fn;
+}
 
 // https://vitejs.dev/config/
 export default defineConfig({
