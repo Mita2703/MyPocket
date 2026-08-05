@@ -142,6 +142,10 @@
     padding-bottom: max(env(safe-area-inset-bottom, 0px), 1rem);
   }
 
+  .pb-safe {
+    padding-bottom: env(safe-area-inset-bottom, 0px);
+  }
+
   /* ── Text gradient ──────────────────────────────────── */
   .text-gradient-rose {
     background: linear-gradient(135deg, #C96068 0%, #AB4543 100%);

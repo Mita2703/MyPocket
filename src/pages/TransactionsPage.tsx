@@ -1,11 +1,12 @@
 import React, { useMemo, useRef, useEffect, useState } from 'react';
 import { useLiveQuery } from 'dexie-react-hooks';
-import { Search, Trash2, ChevronDown, CalendarDays, CheckCircle2 } from 'lucide-react';
+import { Search, Trash2, Edit3, ChevronDown, CalendarDays, CheckCircle2 } from 'lucide-react';
 
 import { db } from '../db/database';
 import { Card } from '../components/common/Card';
 import { ConfirmModal } from '../components/common/ConfirmModal';
 import { CategoryIcon } from '../components/common/CategoryIcon';
+import { TransactionFormModal } from '../components/transactions/TransactionFormModal';
 import { formatRupiah } from '../utils/currency';
 import { formatDateReadable, formatMonthReadable, getCurrentMonthYear } from '../utils/date';
 import { cn } from '../utils/cn';
@@ -21,6 +22,9 @@ export const TransactionsPage: React.FC = () => {
   const [deletingTx, setDeletingTx]           = useState<Transaction | null>(null);
   const [isDeleting, setIsDeleting]           = useState(false);
 
+  // Edit modal state
+  const [editingTx, setEditingTx]             = useState<Transaction | null>(null);
+
   // ── Live Queries ────────────────────────────────────────────
   const transactions = useLiveQuery(() => db.transactions.orderBy('date').reverse().toArray(), []);
   const categories   = useLiveQuery(() => db.categories.toArray(), []);
@@ -29,7 +33,9 @@ export const TransactionsPage: React.FC = () => {
   const categoryMap = useMemo(() => {
     const map = new Map<string, { name: string; icon: string; color: string }>();
     categories?.forEach((c: Category) => map.set(c.id, { name: c.name, icon: c.icon, color: c.color }));
-    return map;
+    return {
+      get: (id: string) => map.get(id) || { name: 'Tanpa Kategori', icon: 'HelpCircle', color: '#9CA3AF' }
+    };
   }, [categories]);
 
   // ── Available Months Options (Top option: "Semua Riwayat") ────
@@ -269,6 +275,15 @@ export const TransactionsPage: React.FC = () => {
                           </span>
 
                           <button
+                            onClick={() => setEditingTx(tx)}
+                            className="p-2 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-xl transition-all tap-feedback"
+                            title="Edit transaksi"
+                            aria-label="Edit transaksi"
+                          >
+                            <Edit3 size={15} />
+                          </button>
+
+                          <button
                             onClick={() => setDeletingTx(tx)}
                             className="p-2 text-rose-300 hover:text-rose-600 hover:bg-rose-50 rounded-xl transition-all tap-feedback"
                             title="Hapus transaksi"
@@ -340,6 +355,13 @@ export const TransactionsPage: React.FC = () => {
             </div>
           ) : undefined
         }
+      />
+
+      {/* Edit Transaction Modal */}
+      <TransactionFormModal
+        isOpen={Boolean(editingTx)}
+        onClose={() => setEditingTx(null)}
+        editTransaction={editingTx || undefined}
       />
 
     </div>

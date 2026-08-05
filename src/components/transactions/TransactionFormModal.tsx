@@ -1,11 +1,11 @@
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useEffect } from 'react';
 import { useLiveQuery } from 'dexie-react-hooks';
 import { MinusCircle, PlusCircle, CalendarDays, StickyNote, CheckCircle2 } from 'lucide-react';
 import { db } from '../../db/database';
 import { Modal } from '../common/Modal';
 import { Button } from '../common/Button';
 import { CategoryIcon } from '../common/CategoryIcon';
-import { TransactionType, Category } from '../../types';
+import { Transaction, TransactionType, Category } from '../../types';
 import { formatNumber, parseRawAmount } from '../../utils/currency';
 import { getCurrentDateISO } from '../../utils/date';
 import { cn } from '../../utils/cn';
@@ -13,6 +13,8 @@ import { cn } from '../../utils/cn';
 interface TransactionFormModalProps {
   isOpen: boolean;
   onClose: () => void;
+  /** Optional transaction to edit */
+  editTransaction?: Transaction;
   /** Pre-fill type (optional, for quick-add shortcuts) */
   defaultType?: TransactionType;
 }
@@ -20,6 +22,7 @@ interface TransactionFormModalProps {
 export const TransactionFormModal: React.FC<TransactionFormModalProps> = ({
   isOpen,
   onClose,
+  editTransaction,
   defaultType = 'expense',
 }) => {
   const [type, setType]               = useState<TransactionType>(defaultType);
@@ -29,6 +32,19 @@ export const TransactionFormModal: React.FC<TransactionFormModalProps> = ({
   const [note, setNote]               = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [saveSuccess, setSaveSuccess]   = useState(false);
+
+  // Sync state when editing transaction changes
+  useEffect(() => {
+    if (editTransaction) {
+      setType(editTransaction.type);
+      setDisplayAmount(formatNumber(editTransaction.amount));
+      setCategoryId(editTransaction.categoryId);
+      setDate(editTransaction.date);
+      setNote(editTransaction.note || '');
+    } else {
+      resetForm();
+    }
+  }, [editTransaction, isOpen]);
 
   // Fetch categories filtered by active type
   const categories = useLiveQuery(
@@ -54,14 +70,26 @@ export const TransactionFormModal: React.FC<TransactionFormModalProps> = ({
 
     setIsSubmitting(true);
     try {
-      await db.transactions.add({
-        amount,
-        type,
-        categoryId,
-        date,
-        note: note.trim() || undefined,
-        createdAt: new Date().toISOString(),
-      });
+      if (editTransaction?.id) {
+        // Edit existing transaction
+        await db.transactions.update(editTransaction.id, {
+          amount,
+          type,
+          categoryId,
+          date,
+          note: note.trim() || undefined,
+        });
+      } else {
+        // Add new transaction
+        await db.transactions.add({
+          amount,
+          type,
+          categoryId,
+          date,
+          note: note.trim() || undefined,
+          createdAt: new Date().toISOString(),
+        });
+      }
 
       // Brief success flash before closing
       setSaveSuccess(true);
@@ -96,7 +124,7 @@ export const TransactionFormModal: React.FC<TransactionFormModalProps> = ({
     <Modal
       isOpen={isOpen}
       onClose={handleClose}
-      title="Tambah Transaksi"
+      title={editTransaction ? 'Edit Transaksi' : 'Tambah Transaksi'}
     >
       <form onSubmit={handleSubmit} className="space-y-5">
 
@@ -162,9 +190,13 @@ export const TransactionFormModal: React.FC<TransactionFormModalProps> = ({
             Kategori
           </label>
 
-          {(!categories || categories.length === 0) ? (
+          {categories === undefined ? (
             <div className="py-6 text-center text-xs text-slate-400">
               Memuat kategori...
+            </div>
+          ) : categories.length === 0 ? (
+            <div className="py-6 text-center text-xs text-rose-600 font-semibold bg-rose-50/50 border border-dashed border-rose-100 rounded-xl p-3">
+              Belum ada kategori untuk tipe ini.<br/>Silakan buat kategori di tab Pengaturan.
             </div>
           ) : (
             <div className="grid grid-cols-4 gap-2 max-h-44 overflow-y-auto scrollbar-none pb-0.5">
@@ -278,6 +310,8 @@ export const TransactionFormModal: React.FC<TransactionFormModalProps> = ({
               <CheckCircle2 size={18} />
               Tersimpan!
             </span>
+          ) : editTransaction ? (
+            'Simpan Perubahan'
           ) : (
             `Simpan ${isExpense ? 'Pengeluaran' : 'Pemasukan'}`
           )}

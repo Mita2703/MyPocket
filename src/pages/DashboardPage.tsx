@@ -46,7 +46,9 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
   const categoryMap = useMemo(() => {
     const map = new Map<string, { name: string; icon: string; color: string }>();
     categories?.forEach((c: Category) => map.set(c.id, { name: c.name, icon: c.icon, color: c.color }));
-    return map;
+    return {
+      get: (id: string) => map.get(id) || { name: 'Tanpa Kategori', icon: 'HelpCircle', color: '#9CA3AF' }
+    };
   }, [categories]);
 
   // ── Monthly totals ───────────────────────────────────────────
@@ -96,7 +98,7 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
     return data;
   }, [transactions]);
 
-  // ── Budget alerts (≥70%) ─────────────────────────────────────
+  // ── Budget alerts (≥80%) ─────────────────────────────────────
   const budgetAlerts = useMemo(() => {
     if (!budgets || !transactions) return [];
     const spent: Record<string, number> = {};
@@ -112,7 +114,7 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
         const cat = categoryMap.get(b.categoryId);
         return { categoryId: b.categoryId, name: cat?.name || 'Kategori', limit: b.amountLimit, spent: s, pct };
       })
-      .filter((item) => item.pct >= 70)
+      .filter((item) => item.pct >= 80)
       .sort((a, b) => b.pct - a.pct);
   }, [budgets, transactions, categoryMap, currentMonth]);
 
@@ -260,7 +262,13 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
               <div
                 className={cn(
                   'h-full rounded-full transition-all duration-700',
-                  budgetSummary.pct >= 100 ? 'bg-rose-700 animate-pulse-soft' : 'bg-rose-500',
+                  budgetSummary.pct >= 100
+                    ? 'bg-rose-700 animate-pulse-soft'
+                    : budgetSummary.pct >= 85
+                    ? 'bg-rose-500'
+                    : budgetSummary.pct >= 60
+                    ? 'bg-rose-400'
+                    : 'bg-rose-300'
                 )}
                 style={{ width: `${Math.min(budgetSummary.pct, 100)}%` }}
               />

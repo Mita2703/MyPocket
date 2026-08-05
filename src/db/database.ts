@@ -64,6 +64,19 @@ export class MyPocketDatabase extends Dexie {
 
 export const db = new MyPocketDatabase();
 
+export async function deleteCategoryAndMigrateTransactions(categoryId: string) {
+  return db.transaction('rw', [db.categories, db.transactions, db.budgets], async () => {
+    // 1. Migrate any transactions with this category ID to 'uncategorized'
+    await db.transactions.where('categoryId').equals(categoryId).modify({ categoryId: 'uncategorized' });
+
+    // 2. Clear any budgets for this category
+    await db.budgets.where('categoryId').equals(categoryId).delete();
+
+    // 3. Delete the category itself
+    await db.categories.delete(categoryId);
+  });
+}
+
 export async function ensureSeedData() {
   try {
     const categoryCount = await db.categories.count();
